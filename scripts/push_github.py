@@ -40,7 +40,10 @@ try:
         f.write("node_modules/\ntemp_build/\n*.mp3\n*.zip\n")
 
     run_git(["add", "."])
-    run_git(["commit", "-m", "feat: complete Epic Automate pipeline with live Firebase deployment and Hugging Face video"])
+    try:
+        run_git(["commit", "-m", "feat: complete Epic Automate pipeline with live Firebase deployment and Hugging Face video"])
+    except Exception:
+        pass
     
     remote_url = f"https://{GITHUB_TOKEN}@github.com/{USERNAME}/{REPO_NAME}.git"
     
