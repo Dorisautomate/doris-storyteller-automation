@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Epic Automate - Control Center</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Firebase App & Firestore SDKs (v10 Modular) -->
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div>
+          <h1>Epic Automate</h1>
+          <p class="subtitle">Kaggle T4 Compute • Firestore Real-Time • Hugging Face Datasets</p>
+        </div>
+      </div>
+      <div class="status-pill" id="connectionStatus">
+        <span class="status-dot"></span> <span id="statusLabel">Ready</span>
+      </div>
+    </header>
+
+    <main class="grid-layout">
+      <!-- Left Column: Controls & Trigger -->
+      <section class="card control-card">
+        <h2>🚀 Launch Automation</h2>
+        <p class="card-desc">Trigger high-performance GPU tasks on Kaggle with live milestone sync.</p>
+
+        <form id="triggerForm">
+          <div class="form-group">
+            <label for="jobTitle">Job Name / Description</label>
+            <input type="text" id="jobTitle" placeholder="e.g. Generate 4K AI Explainer Video" required>
+          </div>
+
+          <div class="form-group">
+            <label for="jobPayload">Input Payload / Script / Config (JSON or text)</label>
+            <textarea id="jobPayload" rows="4" placeholder="Enter automation prompts, parameters, or data payload..."></textarea>
+          </div>
+
+          <div class="button-row">
+            <button type="submit" id="btnLaunch" class="btn btn-primary">
+              <span class="btn-icon">▶</span> Launch on Kaggle T4
+            </button>
+            <button type="button" id="btnCancel" class="btn btn-danger" disabled>
+              <span class="btn-icon">⏹</span> Cancel Execution
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right Column: Live Status & Progress -->
+      <section class="card progress-card">
+        <h2>📊 Real-Time Execution Status</h2>
+        
+        <div class="progress-container">
+          <div class="progress-header">
+            <span class="progress-title" id="milestoneText">Awaiting job trigger...</span>
+            <span class="progress-percentage" id="progressPct">0%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- Terminal / Live Logs -->
+        <div class="log-section">
+          <div class="log-header">
+            <span>Execution Terminal</span>
+            <button id="btnClearLog" class="btn-text">Clear</button>
+          </div>
+          <div class="log-console" id="logConsole">
+            <div class="log-entry system">[System] Epic Automate dashboard initialized.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom Span: Hugging Face Output & Web Media Preview -->
+      <section class="card output-card" id="outputCard" style="display: none;">
+        <h2>🎉 Generated Asset Ready</h2>
+        <p class="card-desc">Asset stored permanently in Hugging Face Datasets.</p>
+        
+        <div class="asset-actions">
+          <input type="text" id="assetUrlInput" class="asset-url-field" readonly>
+          <button id="btnCopyUrl" class="btn btn-secondary">
+            📋 Copy URL
+          </button>
+        </div>
+
+        <!-- Interactive Media Preview Player -->
+        <div class="media-preview-container" id="mediaPreview">
+          <video id="videoPlayer" controls style="display: none; max-width: 100%; border-radius: 8px;"></video>
+          <audio id="audioPlayer" controls style="display: none; width: 100%;"></audio>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
