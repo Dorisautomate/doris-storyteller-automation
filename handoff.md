@@ -22,7 +22,7 @@
 |---|---|---|---|
 | **Firebase Hosting** | Web Frontend | `https://dorisautomate.web.app` | 🟢 Live & Tested |
 | **Hugging Face Datasets** | Asset Storage | `https://huggingface.co/datasets/Dorisautomate/automation-assets` | 🟢 Active & Verified |
-| **Output Video Asset** | Master MP4 | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_psychology_story_video.mp4` | 🟢 Verified & Playing |
+| **Output Video Asset** | Master MP4 (True F5-TTS Doris Voice Clone) | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_f5_cloned_story_video.mp4` | 🟢 Verified & Playing |
 | **GitHub Repository** | Source Code | `https://github.com/Dorisautomate/doris-storyteller-automation` | 🟢 Synced |
 | **Kaggle Compute** | GPU Accelerator | T4 GPU (`NvidiaTeslaT4`) | 🟢 Verified |
 

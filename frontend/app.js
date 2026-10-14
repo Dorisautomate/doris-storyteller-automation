@@ -1,7 +1,7 @@
 // Doris AI Storyteller — Frontend Application Logic
 // Epic Automate Standard Implementation with Persistent State
 
-const HF_VIDEO_URL = "https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_psychology_story_video.mp4";
+const HF_VIDEO_URL = "https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_f5_cloned_story_video.mp4";
 
 let selectedImages = [];
 let scriptSentences = [];
