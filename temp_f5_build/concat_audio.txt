@@ -1,0 +1,4 @@
+file 'C:/Users/doris/Downloads/Doris Automation/temp_f5_build/f5_sentence_1.wav'
+file 'C:/Users/doris/Downloads/Doris Automation/temp_f5_build/f5_sentence_2.wav'
+file 'C:/Users/doris/Downloads/Doris Automation/temp_f5_build/f5_sentence_3.wav'
+file 'C:/Users/doris/Downloads/Doris Automation/temp_f5_build/f5_sentence_4.wav'

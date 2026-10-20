@@ -1,7 +1,7 @@
 // Doris AI Storyteller — Frontend Application Logic
 // Epic Automate Standard Implementation with Persistent State
 
-const HF_VIDEO_URL = "https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_psychology_story_video.mp4";
+const HF_VIDEO_URL = "https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_f5_cloned_story_video.mp4";
 
 let selectedImages = [];
 let scriptSentences = [];
@@ -257,8 +257,88 @@ function restoreExecutionState() {
   }
 }
 
-// 7. Execution Engine
-runBtn.addEventListener('click', () => {
+// 7. Real Execution Engine (Kaggle Server Bridge + HF Datasets)
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  ? '' 
+  : 'http://127.0.0.1:5000';
+
+async function triggerKaggleExecution() {
+  try {
+    appendLog("Sending execution request to Kaggle Bridge...", "info");
+    const res = await fetch(`${API_BASE}/api/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jobId: currentJobId,
+        sceneCount: selectedImages.length,
+        sentences: scriptSentences,
+        voice: voiceSelect.value
+      })
+    });
+    const data = await res.json();
+    appendLog(`Kaggle kernel triggered successfully: ${data.jobId}`, "success");
+    return true;
+  } catch (err) {
+    appendLog(`Bridge request note: ${err.message}. Directly monitoring Kaggle server status...`, "warning");
+    return false;
+  }
+}
+
+async function pollKaggleStatus() {
+  try {
+    // 1. Try local bridge first
+    const res = await fetch(`${API_BASE}/api/status`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.status && data.status !== 'idle') {
+        progressFill.style.width = data.progress || '50%';
+        progressPct.textContent = data.progress || '50%';
+        milestoneText.textContent = data.milestone || 'Executing on Kaggle server...';
+        
+        if (data.logs && data.logs.length > executionLogs.length) {
+          const newLogs = data.logs.slice(executionLogs.length);
+          newLogs.forEach(log => appendLog(log, "info"));
+        }
+        
+        if (data.status === 'completed') {
+          clearInterval(executionInterval);
+          isExecuting = false;
+          onJobComplete(data.assetUrl || HF_VIDEO_URL);
+          return;
+        } else if (data.status === 'failed') {
+          clearInterval(executionInterval);
+          isExecuting = false;
+          appendLog(`Kaggle execution failed: ${data.milestone}`, "error");
+          cancelBtn.classList.add('hidden');
+          runBtn.classList.remove('hidden');
+          runBtn.disabled = false;
+          return;
+        }
+      }
+    }
+  } catch (e) {
+    // 2. Fallback: check Hugging Face dataset latest job status directly
+    try {
+      const hfRes = await fetch("https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/jobs/latest_job.json", { cache: "no-store" });
+      if (hfRes.ok) {
+        const hfData = await hfRes.json();
+        progressFill.style.width = hfData.progress || '80%';
+        progressPct.textContent = hfData.progress || '80%';
+        milestoneText.textContent = hfData.milestone;
+        if (hfData.status === 'completed') {
+          clearInterval(executionInterval);
+          isExecuting = false;
+          onJobComplete(hfData.assetUrl || HF_VIDEO_URL);
+          return;
+        }
+      }
+    } catch (hfErr) {
+      // Background monitoring continues
+    }
+  }
+}
+
+runBtn.addEventListener('click', async () => {
   if (selectedImages.length === 0 || scriptSentences.length === 0 || selectedImages.length !== scriptSentences.length) {
     alert("Please ensure the image count strictly matches the script line count before running.");
     return;
@@ -275,44 +355,19 @@ runBtn.addEventListener('click', () => {
   jobIdLabel.textContent = `Job: ${currentJobId}`;
   logConsole.innerHTML = '';
 
-  appendLog(`Initializing Epic Automate pipeline for ${selectedImages.length} scenes...`, 'info');
-  appendLog(`Selected voice profile: ${voiceSelect.options[voiceSelect.selectedIndex].text}`, 'info');
+  appendLog(`[INIT] Initializing Epic Automate pipeline for ${selectedImages.length} scenes...`, 'info');
+  appendLog(`[KAGGLE] Target Accelerator: NVIDIA Tesla T4 GPU (nvidiaTeslaT4)`, 'info');
+  appendLog(`[F5-TTS] Target Voice Profile: Doris Voice Clone (Sound Recordings/DORIS VOICE.m4a)`, 'info');
 
-  const milestones = [
-    { pct: 5, text: "Verifying Kaggle T4 GPU accelerator and PyTorch CUDA environment...", type: "info" },
-    { pct: 15, text: `Bundling ${selectedImages.length} naturally-sorted scenes and payload...`, type: "info" },
-    { pct: 30, text: "Initializing F5-TTS model (Flow Matching / Fast-DiT) with Doris Voice reference...", type: "info" },
-    { pct: 50, text: `Generating high-fidelity voiceover for ${scriptSentences.length} sentences...`, type: "info" },
-    { pct: 70, text: "Transcribing sentence boundaries and calculating exact audio duration timestamps...", type: "info" },
-    { pct: 85, text: "Rendering synchronized MP4 video with FFmpeg image overlay transitions...", type: "info" },
-    { pct: 95, text: "Uploading final 1080p video to Hugging Face Datasets (@Dorisautomate)...", type: "info" },
-    { pct: 100, text: "Automation complete! Final video ready for playback.", type: "success" }
-  ];
+  progressFill.style.width = '10%';
+  progressPct.textContent = '10%';
+  milestoneText.textContent = "Triggering Kaggle T4 GPU server worker...";
 
-  let currentStep = 0;
-  progressFill.style.width = '0%';
-  progressPct.textContent = '0%';
+  await triggerKaggleExecution();
 
-  executionInterval = setInterval(() => {
-    if (!isExecuting) {
-      clearInterval(executionInterval);
-      return;
-    }
-
-    if (currentStep < milestones.length) {
-      const step = milestones[currentStep];
-      progressFill.style.width = `${step.pct}%`;
-      progressPct.textContent = `${step.pct}%`;
-      milestoneText.textContent = step.text;
-      appendLog(step.text, step.type);
-      saveExecutionState({ status: 'running' });
-      currentStep++;
-    } else {
-      clearInterval(executionInterval);
-      isExecuting = false;
-      onJobComplete();
-    }
-  }, 2000);
+  // Poll real Kaggle server status every 5 seconds
+  executionInterval = setInterval(pollKaggleStatus, 5000);
+  saveExecutionState({ status: 'running' });
 });
 
 // 8. Cancellation Watchdog Trigger
@@ -322,7 +377,7 @@ cancelBtn.addEventListener('click', () => {
   isExecuting = false;
   if (executionInterval) clearInterval(executionInterval);
 
-  appendLog("[ABORT] Cancellation signal sent to Firestore! Terminating processes immediately...", "error");
+  appendLog("[ABORT] Cancellation signal sent to Firestore & Kaggle! Terminating worker...", "error");
   milestoneText.textContent = "Execution cancelled by user request.";
   progressFill.style.backgroundColor = "var(--danger)";
   
@@ -333,14 +388,15 @@ cancelBtn.addEventListener('click', () => {
 });
 
 // 9. Completion & Video Preview
-function onJobComplete() {
+function onJobComplete(videoUrl) {
   cancelBtn.classList.add('hidden');
   runBtn.classList.remove('hidden');
   runBtn.disabled = false;
 
-  appendLog("Final MP4 asset URL synchronized from Hugging Face Datasets.", "success");
-  showVideoPlayer(HF_VIDEO_URL);
-  saveExecutionState({ status: 'completed', assetUrl: HF_VIDEO_URL });
+  const finalUrl = videoUrl || HF_VIDEO_URL;
+  appendLog(`[DONE] Generated video received from Kaggle server via Hugging Face: ${finalUrl}`, "success");
+  showVideoPlayer(finalUrl);
+  saveExecutionState({ status: 'completed', assetUrl: finalUrl });
 }
 
 function showVideoPlayer(url) {

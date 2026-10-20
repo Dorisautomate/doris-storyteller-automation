@@ -1,0 +1,16 @@
+{
+  "id": "dorisautomate/doris-storyteller-worker",
+  "title": "Doris Storyteller Worker",
+  "code_file": "kaggle_executor.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "machine_shape": "NvidiaTeslaT4",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
