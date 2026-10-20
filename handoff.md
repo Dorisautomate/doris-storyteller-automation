@@ -29,6 +29,7 @@
 | **Cloud Orchestrator** | GitHub Actions | `https://github.com/Dorisautomate/doris-storyteller-automation/actions` | 🟢 Cloud Workflow Verified (Multi-Voice Support) |
 | **Kaggle Kernel** | T4 GPU Worker | `https://www.kaggle.com/code/dorisautomate/doris-storyteller-worker` | 🟢 Kernel v10 Deployed |
 | **Hugging Face Datasets** | Asset Storage | `https://huggingface.co/datasets/Dorisautomate/automation-assets` | 🟢 Active (Hope & Doris Voice Slices & MP4s Stored) |
+| **1-Minute Master Video (Why Your Brain Panics When You Say No)** | 1080p MP4 | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/why_your_brain_panics_saying_no_1080p.mp4` | 🟢 Verified & Playing |
 | **Master Video (Hope Professional)** | 1080p MP4 | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/hope_professional_story_video.mp4` | 🟢 Verified & Playing |
 | **Master Video (Hope Upbeat)** | 1080p MP4 | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/hope_upbeat_story_video.mp4` | 🟢 Verified & Playing |
 | **Master Video (Doris Voice Clone)** | 1080p MP4 | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_f5_cloned_story_video.mp4` | 🟢 Verified & Playing |

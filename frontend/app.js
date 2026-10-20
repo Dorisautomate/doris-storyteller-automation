@@ -10,12 +10,21 @@ const VOICE_VIDEO_MAP = {
   doris: `${HF_BASE_URL}/doris_f5_cloned_story_video.mp4`
 };
 
-const DEFAULT_VIDEO_URL = VOICE_VIDEO_MAP.hope_professional;
+const DEFAULT_VIDEO_URL = `${HF_BASE_URL}/why_your_brain_panics_saying_no_1080p.mp4`;
 const STORAGE_KEY_ACTIVE = 'epic_active_job';
 const STORAGE_KEY_HISTORY = 'epic_execution_history';
 
 // Default initial history seed containing verified cloud runs
 const SEED_HISTORY = [
+  {
+    id: "job_dr_doris_why_your_brain_panics_saying_no",
+    voice: "hope_professional",
+    voiceLabel: "✨ Hope — Professional (Dr Doris Psych)",
+    scenes: 10,
+    status: "completed",
+    assetUrl: `${HF_BASE_URL}/why_your_brain_panics_saying_no_1080p.mp4`,
+    timestamp: "10/20/2026, 11:18 AM"
+  },
   {
     id: "job_hope_professional_master",
     voice: "hope_professional",
