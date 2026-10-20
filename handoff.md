@@ -61,7 +61,21 @@
 
 ---
 
-## 5. Milestone: True 1-Minute Production Run (Why Your Brain Panics When You Say No)
+## 5. Milestone: Full 15-Minute Production Run (Be So Calm It Makes People Nervous)
+- **Title**: *"Be So Calm It Makes People Nervous: The 6 Levels of Psychological Leverage"*
+- **Structure**: 11-Beat PSY-Ladder Outlier System (2,424 words / 169 scenes).
+- **Scene Assets**: 169 sequentially named images batch-generated via Google Flow (`Doris Image Stylist`) with `🍌 Nano Banana 2 Lite` (16:9) and anchor character reference, extracted directly from DOM memory to `C:\Users\doris\Downloads\be_so_calm_it_makes_people_nervous_images\`.
+- **Script Assets**: `be_so_calm_it_makes_people_nervous_15min.csv` and `be_so_calm_it_makes_people_nervous_15min.txt`.
+- **Narration Audio**: 100% synthesized sentence-by-sentence with Hope Professional voice profile (**1,024.42 seconds / 17.07 minutes** total spoken duration).
+- **Web App Alignment**: Verified on `https://dorisautomate.web.app` (`Job: epic_job_1792522570517`) with `🟢 Aligned: 169 Images ↔ 169 Sentences`.
+- **Master Video Rendered**: 1,024.42 seconds (17.07 minutes), 1920x1080 Full HD (22.75 MB), AAC audio.
+- **Deliverables**:
+  - Local MP4: `C:\Users\doris\Downloads\be_so_calm_it_makes_people_nervous_1080p.mp4`
+  - Cloud Playable URL: `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/be_so_calm_it_makes_people_nervous_1080p.mp4`
+
+---
+
+## 6. Milestone: True 1-Minute Production Run (Why Your Brain Panics When You Say No)
 - **Zero Improvisation / No Image Recycling**: All 15 scenes generated fresh on Google Flow tool via user active Chrome session.
 - **Scene Assets**: 15 sequentially numbered 16:9 images saved to `C:\Users\doris\Downloads\why_your_brain_panics_saying_no_images\`.
 - **Script TXT / CSV**: 15 sentences, full 1-minute+ long-form script (`why_your_brain_panics_saying_no_true_1min.txt` / `.csv`).
