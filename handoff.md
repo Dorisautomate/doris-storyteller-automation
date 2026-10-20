@@ -7,9 +7,9 @@
 ## 1. Project Identity & Architecture
 - **Project Name**: Doris AI Storyteller & Sentence-Synchronized Video Automation
 - **Date Created**: 2026-10-13
-- **Last Modified**: 2026-10-20 11:05
+- **Last Modified**: 2026-10-20 11:10
 - **Modus Operandi**: `epic-automate` (100% Live Cloud Deployment)
-  - **Master Skill Registered**: `doris` (`skills/doris/SKILL.md` and `~/.gemini/config/skills/doris/SKILL.md`) — Orchestrates channel audit, outlier title coining, PSY-Ladder scriptwriting, Google Flow scene batch generation, and web app video compilation.
+  - **Master Skill Registered**: `doris` (`skills/doris/SKILL.md` and `~/.gemini/config/skills/doris/SKILL.md`) — Bound specifically to **[Dr Doris Psych](https://www.youtube.com/@DrDorisPsych)**. Features the **Uninterrupted Autonomous Execution Mandate** (runs 100% autonomously from channel audit & duplicate prevention to final video delivery without user interruption).
   - **Frontend**: Live on Firebase Hosting (`https://dorisautomate.web.app`) — accessible globally from any browser or device.
   - **Tabs & Views**:
     - **Studio / Generator**: Step-by-step studio with image selector, multi-voice picker, script alignment matrix, and live execution monitor.

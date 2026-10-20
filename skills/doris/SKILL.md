@@ -1,16 +1,24 @@
 ---
 name: doris
 description: >-
-  Master end-to-end autonomous YouTube psychology video production engine. Audits YouTube channels, formulates viral outlier titles, writes full 11-beat psychology scripts with 1-sentence-per-line voiceover and Google Imagen-compliant 2D sitcom prompts, generates all scene images on Google Flow via active Chrome, uploads and aligns assets directly on the live Doris Automate web app (https://dorisautomate.web.app), and compiles and delivers the final synchronized 1080p MP4 video. Trigger on '/doris', 'Doris', 'generate for me a video for my channel', or requests to run the complete Doris channel automation pipeline.
+  Master end-to-end autonomous YouTube psychology video production engine for Dr Doris Psych (https://www.youtube.com/@DrDorisPsych). Runs continuously without user interruption from initial channel audit and duplicate prevention, through outlier title formulation, 11-beat PSY-Ladder scriptwriting, Google Flow batch image generation via active Chrome, live web app video assembly on dorisautomate.web.app, to final 1080p MP4 delivery. Trigger on '/doris', 'Doris', 'generate for me a video for my channel', or requests to run the complete Doris channel automation pipeline.
 ---
 
 # Doris — Master YouTube Video Production Pipeline
 
-The unified, end-to-end autonomous channel automation skill. Orchestrates the complete YouTube lifecycle from initial channel research to final 1080p sentence-synchronized video delivery:
+The unified, 100% autonomous channel production skill specifically configured for **[Dr Doris Psych](https://www.youtube.com/@DrDorisPsych)**.
+
+> [!IMPORTANT]
+> ### The Uninterrupted Autonomous Execution Mandate (Zero-Guidance Protocol)
+> Once triggered, this skill **MUST NOT STOP OR PAUSE** for user confirmation, approvals, or step-by-step guidance.
+> - **DO NOT** ask the user if they like the title.
+> - **DO NOT** pause to ask if you should proceed to scriptwriting.
+> - **DO NOT** pause to ask if you should start Google Flow or the web app compiler.
+> - The agent **must autonomously execute all 5 phases sequentially in one continuous run**, auto-resolving any minor hurdles, and only concluding when the finalized, synchronized 1080p master video is delivered.
 
 ```mermaid
 flowchart TD
-    A["Phase 1: Channel Audit & Outlier Title Mining\n• Check channel uploads & baseline views\n• 3x-10x cross-niche outlier multiplier\n• Psychology niche bending & scarcity audit"] --> B["Phase 2: Scriptwriting & Deliverables\n• 2,400-3,100 word 11-Beat PSY-Ladder script\n• Sentence-by-sentence CSV (SN, SCRIPT, PROMPT)\n• 1-sentence-per-line TXT for audio sync"]
+    A["Phase 1: Mandatory Channel Audit & Outlier Mining\n• Check all existing videos on @DrDorisPsych\n• Prevent duplicate topics & cannibalization\n• 3x-10x cross-niche outlier multiplier\n• Psychology niche bending & scarcity audit"] --> B["Phase 2: Scriptwriting & Deliverables\n• 2,400-3,100 word 11-Beat PSY-Ladder script\n• Sentence-by-sentence CSV (SN, SCRIPT, PROMPT)\n• 1-sentence-per-line TXT for audio sync"]
     B --> C["Phase 3: Google Flow Scene Generation\n• Connect to active Chrome session (Port 9222)\n• Upload CSV to Flow tool\n• Nano Banana 2 Lite (16:9) + host character ref\n• In-memory DOM base64 extraction (0% failure)\n• Save sequential '1. [sentence].jpg' folder"]
     C --> D["Phase 4: Web App Automation (dorisautomate.web.app)\n• Navigate to live web app via browser agent\n• Select image folder & paste script lines\n• Choose voice (Hope — Professional by default)\n• Verify Visual Alignment Matrix (N Images ↔ N Lines)\n• Trigger cloud execution & monitor in real-time"]
     D --> E["Phase 5: Master Video Delivery & Playback\n• Fetch finalized 1080p MP4 from Hugging Face\n• Record job to Execution Logs & Video Library\n• Present playable video & download link to user"]
@@ -23,9 +31,8 @@ flowchart TD
 Activate this skill whenever the user says:
 - `"/doris"`
 - `"/doris generate for me a video for my channel"`
-- `"/doris generate a video for [channel_url]"`
 - *"Doris, generate for me a video for my channel"*
-- *"Run the Doris pipeline to create a video for my channel"*
+- *"Run the Doris pipeline to create a video for Dr Doris Psych"*
 - *"Generate a complete video from scratch for my channel"*
 
 ---
@@ -34,6 +41,7 @@ Activate this skill whenever the user says:
 
 | Resource | Identifier / Endpoint | Purpose |
 |---|---|---|
+| **Official YouTube Channel** | **[Dr Doris Psych (`https://www.youtube.com/@DrDorisPsych`)](https://www.youtube.com/@DrDorisPsych)** | Embedded anchor channel for duplicate prevention, style alignment & performance baseline |
 | **Live Automation Web App** | `https://dorisautomate.web.app` | Asset ingestion, visual alignment, voice selection & cloud video assembly |
 | **Google Flow Tool** | `https://flow.google.com/shared/tool/ee8f4722-38cb-4363-967f-057725e7c3c6` | High-throughput batch 2D animation scene generation |
 | **Active Chrome Window** | Remote Debugging on `localhost:9222` | Authenticated session for Flow and web app interaction |
@@ -43,27 +51,34 @@ Activate this skill whenever the user says:
 
 ---
 
-## Detailed 5-Phase Production Protocol
+## Detailed 5-Phase Continuous Production Protocol
 
-### Phase 1: Channel Audit & Outlier Title Mining
+### Phase 1: Mandatory Channel Audit & Outlier Title Mining
 
-If the user provides a channel link (e.g., `https://youtube.com/@...` or channel name), audit the channel to tailor the concept to their audience:
+> [!IMPORTANT]
+> **Duplicate Prevention Protocol**:
+> Before formulating any new topic or writing any script, the agent **MUST FIRST** check all videos currently published on the official channel:
+> **`https://www.youtube.com/@DrDorisPsych`**
+> Catalog every published title and subject angle to ensure the new video is 100% novel, does not repeat existing lessons, and does not compete with existing uploads.
 
-1. **Channel Audit**:
-   - Inspect the channel's recent 10–20 uploads using web search or Chrome DevTools.
-   - Calculate the channel's **Baseline / Median Views** over the last 90 days.
-   - Note top-performing themes, audience pain points, and current character/visual style.
-2. **Outlier Mining**:
-   - Scan adjacent high-performing niches (Personal Finance, Tech, Investigative Documentaries, Fitness).
-   - Identify candidate breakout videos with an **Outlier Multiplier of $3.0\text{x}$ to $10.0\text{x}+$**:
+1. **Step 1 — Audit Existing Channel Uploads**:
+   - Navigate to `https://www.youtube.com/@DrDorisPsych/videos` (or search for the channel's published catalog using web search or Chrome DevTools).
+   - Log all published video titles, thumbnail themes, and viewer view counts.
+   - Establish the channel's **Baseline / Median Views** over the last 90 days.
+   - Identify which topics produced above-average viewer retention and comments.
+2. **Step 2 — Identify Unaddressed White-Space Topics**:
+   - Cross-reference the channel's existing library against audience requests in comments and high-search-intent psychology queries.
+   - Disqualify any candidate concept that substantially overlaps with an existing video on `@DrDorisPsych`.
+3. **Step 3 — Cross-Niche Outlier Mining**:
+   - Scan adjacent non-psychology niches (Personal Finance, Business, Tech Documentaries, Fitness, True Crime).
+   - Filter for breakout videos achieving an **Outlier Multiplier of $3.0\text{x}$ to $10.0\text{x}+$**:
      $$\text{Outlier Multiplier} = \frac{\text{Candidate Video Views}}{\text{Candidate Channel Median Views}}$$
-3. **Psychology Niche Bending**:
-   - Extract the viral psychological tension (e.g. status anxiety, boundary defense, cognitive dissonance, counterfeit virtue).
+4. **Step 4 — Psychology Niche Bending**:
+   - Extract the core psychological syntax (status anxiety, boundary defense, cognitive dissonance, counterfeit virtue, silent leverage).
    - Bend the syntax into depth psychology (Jungian shadow, vagal brake, prefrontal regulation, unshakeable composure).
-4. **Scarcity & Search Demand Audit**:
-   - Audit YouTube search for exact matches; enforce a Scarcity Score of **4 or 5 out of 5** (near-zero direct competition).
-   - Confirm strong organic search intent.
-   - Select the winning outlier title (e.g., *"The 6 Mental Levels Where People-Pleasing Turns Into Quiet Power"*).
+5. **Step 5 — YouTube Scarcity Audit & Final Title Selection**:
+   - Verify that YouTube has near-zero direct competition on the coined title (Scarcity Score of **4 or 5 out of 5**).
+   - Confirm search intent, lock the winning title, and **immediately transition to Phase 2 without pausing for user approval**.
 
 ---
 
@@ -87,6 +102,7 @@ Execute the full long-form psychology script adhering strictly to the **PSY-Ladd
 3. **1-Sentence-Per-Line TXT Export**:
    - Save a companion `.txt` file where line $N$ matches row $N$ of the CSV verbatim.
    - Save both files to `C:\Users\doris\Downloads\<Title_Slug>.csv` and `.txt`.
+   - **Immediately transition to Phase 3 without pausing**.
 
 ---
 
@@ -105,6 +121,7 @@ Batch-generate all visual frames using the user's authenticated Google Chrome se
    - Upload Host Character Reference: `my_character_reference.png`.
 3. **Execute Batch Generation**:
    - Click **"Generate All"** and monitor batch progress until 100% complete.
+   - If an individual prompt triggers a safety filter, auto-rephrase the prompt in-memory with softened tokens and retry without stopping.
 4. **In-Memory DOM Image Extraction (Zero Download Errors)**:
    > [!IMPORTANT]
    > Do **NOT** use browser bulk downloads (triggers Windows AES / Chrome "Virus scan failed" file lock errors).
@@ -120,6 +137,7 @@ Batch-generate all visual frames using the user's authenticated Google Chrome se
    - Apply strict sequential naming:
      $$\mathbf{<SN>.\ <Sentence>.jpg}$$
      *(e.g., `1. It is Thursday night, and you are sitting in your car with the headlights off.jpg`)*.
+   - **Immediately transition to Phase 4 without pausing**.
 
 ---
 
@@ -149,6 +167,7 @@ Automate the video compilation directly on the live production web app:
      - `[GITHUB] Dispatching cloud workflow runner on GitHub Actions`
      - `[KAGGLE] Cloud runner spinning up Kaggle T4 GPU worker (NvidiaTeslaT4)`
      - Poll until `[DONE] Generated video received from Kaggle server via Hugging Face`.
+   - **Immediately transition to Phase 5 upon completion**.
 
 ---
 
@@ -158,22 +177,24 @@ Automate the video compilation directly on the live production web app:
    - Extract the master 1080p MP4 URL from Hugging Face Datasets repository (`https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/...`).
 2. **Library Registration**:
    - Verify that the execution entry appears in the web app's **Execution Logs & History** tab with status `🟢 Completed`.
-3. **Present Final Deliverable to User**:
-   - Deliver a formatted completion briefing in chat:
+3. **Final Delivery Message to User**:
+   - Once (and only once) all 5 phases are 100% complete, deliver the completion report:
      - **Video Title & Topic Angle**
-     - **Channel Attribution**
-     - **Voice Profile Used**: (e.g. Hope Professional, Clear & Natural)
-     - **Total Scenes / Images**: (e.g. 180 scenes)
-     - **Total Script Word Count & Estimated Runtime**: (e.g. 2,850 words / 15 mins 40 secs)
+     - **Channel Attribution**: Dr Doris Psych (`@DrDorisPsych`)
+     - **Voice Profile Used**: Hope — Professional, Clear & Natural
+     - **Total Scenes / Images Generated**: (e.g. 180 scenes)
+     - **Total Script Word Count & Runtime**: (e.g. 2,850 words / 15 mins 40 secs)
      - **Direct Playable Video Link**: [Watch Video](https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/hope_professional_story_video.mp4)
      - **Direct MP4 Download Link**
      - **Live Web App Dashboard**: [https://dorisautomate.web.app](https://dorisautomate.web.app)
 
 ---
 
-## Standard Operating Procedures for Subsequent Agents
+## Standard Operating Procedures for Autonomous Agents
 
-1. **Always use active Chrome (Port 9222)**: Never launch a separate unauthenticated headless browser.
-2. **Enforce 1:1 Image-to-Sentence parity**: Every image must strictly correspond to its numbered script sentence.
-3. **Always use `dorisautomate.web.app` as the primary live compiler**: Do not run manual local FFmpeg commands unless specifically requested as an offline fallback.
-4. **Default voice is always Hope Professional**: Unless the user explicitly asks for Doris Voice or Hope Upbeat.
+1. **Continuous Autonomy**: Never pause for user input between phases. Execute all 5 phases end-to-end.
+2. **Always use active Chrome (Port 9222)**: Never launch a separate unauthenticated headless browser.
+3. **Mandatory Duplicate Prevention**: Always check `@DrDorisPsych` before locking the topic.
+4. **Enforce 1:1 Image-to-Sentence parity**: Every image must strictly correspond to its numbered script sentence.
+5. **Primary Compiler**: Always use `dorisautomate.web.app` as the primary live compiler.
+6. **Default Voice**: Default voice is always Hope Professional.
