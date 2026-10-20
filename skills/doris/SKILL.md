@@ -13,7 +13,7 @@ The unified, 100% autonomous channel production skill specifically configured fo
 > Once triggered, this skill **MUST NOT STOP, PAUSE, OR IMPROVISE**.
 > - **NEVER IMPROVISE OR BYPASS ANY STAGE**: The agent **MUST** follow every step of this pipeline literally and strictly.
 > - **NO IMAGE RECYCLING**: Never reuse or copy images from previous runs or older project folders. Every single video requires fresh scene frames batch-generated through Google Flow (`https://flow.google.com/shared/tool/ee8f4722-38cb-4363-967f-057725e7c3c6`). Whether the video requires 15, 17, or 180+ images, only Google Flow has the required speed and style consistency.
-> - **ACTIVE CHROME SESSION & PERMISSION PROTOCOL**: Google Flow must run inside the user's active, signed-in Chrome session via remote debugging (`localhost:9222`) to access their authenticated account and tool configuration. If port 9222 is not reachable or if Chrome displays an approval prompt, the agent must prompt the user once to grant permission / click "Allow" on their open Chrome window, then continue without further pause.
+> - **ACTIVE BROWSER SESSION & PERMISSION PROTOCOL (Chrome or Edge)**: Google Flow must run inside the user's active, signed-in browser session (Microsoft Edge or Google Chrome) via remote debugging (`localhost:9222`) to access their authenticated account and tool configuration. If port 9222 is not reachable or if the browser displays an approval prompt, the agent must prompt the user once to grant permission / click "Allow" on their open browser window (or launch via the desktop automation shortcut), then continue without further pause.
 > - **KAGGLE GPU PIPELINE**: Audio synthesis and video rendering must execute via the Kaggle T4 GPU worker container (`doris-storyteller-worker`) and the cloud orchestrator.
 > - **STRICT DURATION CALIBRATION**: If a 1-minute video is requested, the script must be a full 60 seconds (150–240 words, 14–16 sentences), never an abbreviated 20-second clip.
 > - The agent **must autonomously execute all 5 phases sequentially in one continuous run**, auto-resolving any minor hurdles, and only concluding when the finalized, synchronized 1080p master video is delivered.
@@ -46,7 +46,7 @@ Activate this skill whenever the user says:
 | **Official YouTube Channel** | **[Dr Doris Psych (`https://www.youtube.com/@DrDorisPsych`)](https://www.youtube.com/@DrDorisPsych)** | Embedded anchor channel for duplicate prevention, style alignment & performance baseline |
 | **Live Automation Web App** | `https://dorisautomate.web.app` | Asset ingestion, visual alignment, voice selection & cloud video assembly |
 | **Google Flow Tool** | `https://flow.google.com/shared/tool/ee8f4722-38cb-4363-967f-057725e7c3c6` | High-throughput batch 2D animation scene generation |
-| **Active Chrome Window** | Remote Debugging on `localhost:9222` | Authenticated session for Flow and web app interaction |
+| **Active Browser Window** | Remote Debugging on `localhost:9222` | Authenticated session (Edge or Chrome) for Flow and web app interaction |
 | **Hugging Face Datasets** | `Dorisautomate/automation-assets` | Cloud asset storage, voice references & rendered master MP4s |
 | **Kaggle GPU Accelerator** | `dorisautomate/doris-storyteller-worker` (T4 GPU) | F5-TTS zero-shot voice synthesis & FFmpeg video stitching |
 | **Default Voice Profile** | `✨ Hope — Professional, Clear & Natural` | Cloned from ElevenLabs reference recording via F5-TTS |
