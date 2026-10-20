@@ -1,0 +1,9 @@
+file '/kaggle/working/work_dir/samples/1. It is Thursday night, and you are sitting in your car in the driveway with the headlights turned off (1).jpg'
+duration 5.077
+file '/kaggle/working/work_dir/samples/2. You have been staring blankly at the steering wheel for twenty minutes because walking inside feels .jpg'
+duration 5.579
+file '/kaggle/working/work_dir/samples/3. Most people would call this lazy or unmotivated, but neuroscience reveals a completely different sto.jpg'
+duration 5.184
+file '/kaggle/working/work_dir/samples/4. Your brain is not broken; it is simply trapped in a survival loop that nobody taught you how to rese.jpg'
+duration 5.131
+file '/kaggle/working/work_dir/samples/4. Your brain is not broken; it is simply trapped in a survival loop that nobody taught you how to rese.jpg'

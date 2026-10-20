@@ -1,0 +1,4 @@
+file '/kaggle/working/work_dir/sentence_1.wav'
+file '/kaggle/working/work_dir/sentence_2.wav'
+file '/kaggle/working/work_dir/sentence_3.wav'
+file '/kaggle/working/work_dir/sentence_4.wav'

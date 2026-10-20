@@ -61,7 +61,19 @@
 
 ---
 
-## 5. Standard Operating Procedures for Subsequent Agents
+## 5. Milestone: True 1-Minute Production Run (Why Your Brain Panics When You Say No)
+- **Zero Improvisation / No Image Recycling**: All 15 scenes generated fresh on Google Flow tool via user active Chrome session.
+- **Scene Assets**: 15 sequentially numbered 16:9 images saved to `C:\Users\doris\Downloads\why_your_brain_panics_saying_no_images\`.
+- **Script TXT / CSV**: 15 sentences, full 1-minute+ long-form script (`why_your_brain_panics_saying_no_true_1min.txt` / `.csv`).
+- **Web App Alignment**: Verified on `https://dorisautomate.web.app` with `🟢 Aligned: 15 Images ↔ 15 Sentences`.
+- **Master Video Rendered**: 105.7 seconds (1.76 minutes), 1920x1080 Full HD, AAC audio with Hope Professional voice.
+- **Deliverables**:
+  - Local MP4: `C:\Users\doris\Downloads\why_your_brain_panics_saying_no_1080p.mp4`
+  - Cloud URL: `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/why_your_brain_panics_saying_no_1080p.mp4`
+
+---
+
+## 6. Standard Operating Procedures for Subsequent Agents
 1. **Public Web URL**: Always use `https://dorisautomate.web.app` as the primary live user interface.
 2. **Kaggle Phone Verification**: Ensure the user has completed SMS Phone Verification at `https://www.kaggle.com/settings` to allow Kaggle container GPU access and outbound internet.
 3. **Always update this `handoff.md`** file upon completing any task or modification.
