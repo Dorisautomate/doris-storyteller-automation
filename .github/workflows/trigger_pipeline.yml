@@ -1,0 +1,49 @@
+name: Trigger Doris Automate Cloud Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: 'Job Identifier'
+        required: false
+        default: 'job_cloud'
+
+jobs:
+  execute-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Cloud Tools
+        run: |
+          pip install --upgrade pip
+          pip install kaggle huggingface_hub requests
+
+      - name: Configure Kaggle Credentials
+        env:
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+        run: |
+          mkdir -p ~/.kaggle
+          echo "$KAGGLE_API_TOKEN" > ~/.kaggle/access_token
+          chmod 600 ~/.kaggle/access_token
+
+      - name: Trigger Kaggle T4 GPU Kernel
+        env:
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          echo ">>> Pushing kernel to Kaggle T4 GPU server..."
+          python -m kaggle kernels push -p kaggle --accelerator NvidiaTeslaT4
+
+      - name: Monitor Execution & Sync to Hugging Face
+        env:
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python scripts/monitor_cloud_execution.py
