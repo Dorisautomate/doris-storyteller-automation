@@ -82,18 +82,29 @@ from f5_tts.api import F5TTS
 update_status(15, "Initializing Hugging Face API and downloading voice reference...")
 api = HfApi(token=HF_TOKEN)
 
-# 4. Download Doris Voice Reference
+# 4. Download Target Voice Reference (Default: Hope - Professional & Natural)
+VOICE_MODEL = os.environ.get("VOICE_MODEL", "hope_professional")
+print(f"[Voice Profile] Target voice: {VOICE_MODEL}")
+
+voice_map = {
+    "hope_professional": ("references/hope_professional_ref.wav", "references/hope_professional_ref.txt"),
+    "hope_upbeat": ("references/hope_upbeat_ref.wav", "references/hope_upbeat_ref.txt"),
+    "doris": ("references/doris_voice_ref.wav", "references/doris_voice_ref.txt")
+}
+
+ref_audio_rel, ref_text_rel = voice_map.get(VOICE_MODEL, ("references/hope_professional_ref.wav", "references/hope_professional_ref.txt"))
+
 os.makedirs("work_dir", exist_ok=True)
 ref_audio_path = hf_hub_download(
     repo_id=HF_DATASET_REPO,
-    filename="references/doris_voice_ref.wav",
+    filename=ref_audio_rel,
     repo_type="dataset",
     token=HF_TOKEN,
     local_dir="work_dir"
 )
 ref_text_path = hf_hub_download(
     repo_id=HF_DATASET_REPO,
-    filename="references/doris_voice_ref.txt",
+    filename=ref_text_rel,
     repo_type="dataset",
     token=HF_TOKEN,
     local_dir="work_dir"
@@ -102,7 +113,7 @@ ref_text_path = hf_hub_download(
 with open(ref_text_path, "r", encoding="utf-8") as f:
     ref_text = f.read().strip()
 
-print(f"[Ref Audio] Path: {ref_audio_path} ({os.path.getsize(ref_audio_path)} bytes)")
+print(f"[Ref Audio] Loaded voice: {VOICE_MODEL} from {ref_audio_path} ({os.path.getsize(ref_audio_path)} bytes)")
 print(f"[Ref Text] Content: {ref_text}")
 
 # 5. Download Sample Images

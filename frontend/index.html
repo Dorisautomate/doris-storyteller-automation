@@ -58,7 +58,9 @@
           <div class="form-group">
             <label for="voiceSelect">Voice Model</label>
             <select id="voiceSelect" class="styled-select">
-              <option value="doris" selected>🎙️ Doris Voice (Primary — Cloned from DORIS VOICE.m4a)</option>
+              <option value="hope_professional" selected>✨ Hope — Professional, Clear & Natural (Default)</option>
+              <option value="hope_upbeat">✨ Hope — Upbeat & Clear</option>
+              <option value="doris">🎙️ Doris Voice (Host — DORIS VOICE.m4a)</option>
               <option value="male_deep">🎙️ Deep Male Documentary Narrator</option>
               <option value="female_warm">🎙️ Calm Female Storyteller</option>
               <option value="custom">🎙️ Custom Voice (Upload Reference Audio)</option>
@@ -68,9 +70,9 @@
           <div id="voiceDetails" class="voice-details-box">
             <div class="voice-header-meta">
               <span class="voice-tag">Target Voice</span>
-              <span class="voice-name" id="voiceNameDisplay">Doris Voice (Host)</span>
+              <span class="voice-name" id="voiceNameDisplay">Hope (Professional & Natural)</span>
             </div>
-            <p class="voice-desc" id="voiceDescDisplay">Reference audio loaded from Doris's Sound Recordings (20s clean sample). F5-TTS matches exact timbre and accent.</p>
+            <p class="voice-desc" id="voiceDescDisplay">Reference audio loaded from ElevenLabs Hope audio recording. Clear, calm, articulate professional narration.</p>
           </div>
         </div>
 
@@ -179,6 +181,6 @@
     </main>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=cloud_4"></script>
 </body>
 </html>

@@ -89,7 +89,13 @@ scriptInput.addEventListener('input', () => {
 // 4. Voice Model Selection Event
 voiceSelect.addEventListener('change', () => {
   const val = voiceSelect.value;
-  if (val === 'doris') {
+  if (val === 'hope_professional') {
+    voiceNameDisplay.textContent = "Hope (Professional & Natural)";
+    voiceDescDisplay.textContent = "Cloned from ElevenLabs Hope audio recording. Clear, balanced, articulate professional cadence.";
+  } else if (val === 'hope_upbeat') {
+    voiceNameDisplay.textContent = "Hope (Upbeat & Clear)";
+    voiceDescDisplay.textContent = "Cloned from ElevenLabs Hope audio recording. Energetic, engaging, and bright delivery.";
+  } else if (val === 'doris') {
     voiceNameDisplay.textContent = "Doris Voice (Host)";
     voiceDescDisplay.textContent = "Cloned from Sound Recordings/DORIS VOICE.m4a (20s clean sample). Matches Doris's natural cadence and tone.";
   } else if (val === 'male_deep') {
@@ -280,7 +286,8 @@ async function triggerKaggleExecution() {
       body: JSON.stringify({
         ref: 'main',
         inputs: {
-          job_id: currentJobId
+          job_id: currentJobId,
+          voice_model: voiceSelect.value || 'hope_professional'
         }
       })
     });

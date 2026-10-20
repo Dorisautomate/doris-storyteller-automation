@@ -45,40 +45,43 @@ async function testLiveFrontend() {
   const badgeText = await page.textContent('#alignmentBadge');
   console.log(`[✓] Alignment Badge state: "${badgeText.trim()}"`);
 
-  // 5. Test State Persistence on Reload
   console.log('[*] Testing execution state persistence...');
   await page.evaluate(() => {
-    // Simulate active execution state
-    localStorage.setItem('epic_active_job', JSON.stringify({
-      jobId: 'epic_job_test_live',
-      progress: '100%',
-      milestone: 'Automation complete! Final video ready for playback.',
-      status: 'completed',
-      assetUrl: 'https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_psychology_story_video.mp4',
-      logs: [
-        { text: '[Test] Initialized pipeline', type: 'info' },
-        { text: '[Test] Voiceover synthesized with Doris Voice', type: 'info' },
-        { text: '[Test] Video rendered & synced', type: 'info' },
-        { text: '[Test] Uploaded to Hugging Face Datasets', type: 'success' }
-      ]
-    }));
+    // Clear old test state
+    localStorage.removeItem('epic_active_job');
   });
 
-  console.log('[*] Reloading page to verify persistence...');
-  await page.reload({ waitUntil: 'networkidle' });
+  // 5. Select Images Folder using Playwright input
+  const imagesDir = 'C:\\Users\\doris\\Downloads\\psychology 1';
+  const imgFiles = fs.readdirSync(imagesDir)
+    .filter(f => f.endsWith('.jpg') || f.endsWith('.png'))
+    .map(f => path.join(imagesDir, f));
 
-  // 6. Verify Restored Video Card & Player
-  const videoCardVisible = await page.$eval('#videoCard', el => !el.classList.contains('hidden'));
-  console.log(`[✓] Video Preview Card restored after refresh: ${videoCardVisible}`);
+  console.log(`[*] Selecting directory: ${imagesDir}`);
+  const fileInput = await page.$('#folderInput');
+  await fileInput.setInputFiles(imagesDir);
 
-  const videoSrc = await page.$eval('#videoPlayer', el => el.src);
-  console.log(`[✓] Video Player source loaded: "${videoSrc}"`);
+  await page.waitForTimeout(1000);
+  const updatedBadgeText = await page.textContent('#alignmentBadge');
+  console.log(`[✓] Updated Alignment Badge state: "${updatedBadgeText.trim()}"`);
 
-  const progressText = await page.textContent('#progressPct');
-  console.log(`[✓] Progress restored: ${progressText.trim()}`);
+  // 6. Click Run Execution Button
+  console.log('[*] Clicking Run Video Automation button...');
+  const runBtnDisabled = await page.$eval('#runBtn', el => el.disabled);
+  console.log(`[✓] Run Button disabled state: ${runBtnDisabled}`);
 
-  const milestoneRestored = await page.textContent('#milestoneText');
-  console.log(`[✓] Milestone restored: "${milestoneRestored.trim()}"`);
+  if (!runBtnDisabled) {
+    await page.click('#runBtn');
+    console.log('[✓] Run Button clicked! Waiting 5 seconds to capture initial console logs...');
+    await page.waitForTimeout(5000);
+
+    const logLines = await page.$$eval('#logConsole .log-line', els => els.map(el => el.textContent));
+    console.log('=== CONSOLE LOGS ===');
+    logLines.forEach(l => console.log('  ', l));
+
+    const currentMilestone = await page.textContent('#milestoneText');
+    console.log(`[✓] Current milestone: "${currentMilestone.trim()}"`);
+  }
 
   // 7. Take Screenshot
   const screenshotPath = path.join(__dirname, '..', 'live_frontend_test.png');
