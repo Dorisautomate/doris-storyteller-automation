@@ -9,11 +9,13 @@ description: >-
 The unified, 100% autonomous channel production skill specifically configured for **[Dr Doris Psych](https://www.youtube.com/@DrDorisPsych)**.
 
 > [!IMPORTANT]
-> ### The Uninterrupted Autonomous Execution Mandate (Zero-Guidance Protocol)
-> Once triggered, this skill **MUST NOT STOP OR PAUSE** for user confirmation, approvals, or step-by-step guidance.
-> - **DO NOT** ask the user if they like the title.
-> - **DO NOT** pause to ask if you should proceed to scriptwriting.
-> - **DO NOT** pause to ask if you should start Google Flow or the web app compiler.
+> ### Strict Process Adherence & Zero Improvisation Mandate
+> Once triggered, this skill **MUST NOT STOP, PAUSE, OR IMPROVISE**.
+> - **NEVER IMPROVISE OR BYPASS ANY STAGE**: The agent **MUST** follow every step of this pipeline literally and strictly.
+> - **NO IMAGE RECYCLING**: Never reuse or copy images from previous runs or older project folders. Every single video requires fresh scene frames batch-generated through Google Flow (`https://flow.google.com/shared/tool/ee8f4722-38cb-4363-967f-057725e7c3c6`).
+> - **ACTIVE CHROME SESSION MANDATE**: Google Flow must run inside the user's active, signed-in Chrome session via remote debugging (port 9222) to access their authenticated account and tool configuration.
+> - **KAGGLE GPU PIPELINE**: Audio synthesis and video rendering must execute via the Kaggle T4 GPU worker container (`doris-storyteller-worker`) and the cloud orchestrator.
+> - **STRICT DURATION CALIBRATION**: If a 1-minute video is requested, the script must be a full 60 seconds (150–180 words, 14–16 sentences), never an abbreviated 20-second clip.
 > - The agent **must autonomously execute all 5 phases sequentially in one continuous run**, auto-resolving any minor hurdles, and only concluding when the finalized, synchronized 1080p master video is delivered.
 
 ```mermaid
