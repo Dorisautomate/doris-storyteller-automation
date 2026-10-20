@@ -342,7 +342,7 @@ async function pollKaggleStatus() {
         if (status === 'in_progress') {
           progressFill.style.width = '60%';
           progressPct.textContent = '60%';
-          milestoneText.textContent = "Kaggle T4 GPU server executing F5-TTS Doris voice synthesis and video assembly...";
+          milestoneText.textContent = "Kaggle T4 GPU server executing F5-TTS voice synthesis and video assembly...";
         } else if (status === 'completed') {
           clearInterval(executionInterval);
           isExecuting = false;
@@ -375,7 +375,7 @@ runBtn.addEventListener('click', async () => {
 
   appendLog(`[INIT] Initializing Epic Automate pipeline for ${selectedImages.length} scenes...`, 'info');
   appendLog(`[KAGGLE] Target Accelerator: NVIDIA Tesla T4 GPU (nvidiaTeslaT4)`, 'info');
-  appendLog(`[F5-TTS] Target Voice Profile: Doris Voice Clone (Sound Recordings/DORIS VOICE.m4a)`, 'info');
+  appendLog(`[F5-TTS] Target Voice Profile: ${voiceSelect.options[voiceSelect.selectedIndex].text}`, 'info');
 
   progressFill.style.width = '10%';
   progressPct.textContent = '10%';
