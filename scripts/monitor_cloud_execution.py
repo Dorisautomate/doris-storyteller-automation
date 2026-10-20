@@ -49,29 +49,33 @@ def main():
     api = KaggleApi()
     api.authenticate()
 
-    # Poll Kaggle status
-    for i in range(30):
+    last_state = "QUEUED"
+    for i in range(60): # Poll up to 10 minutes
         time.sleep(10)
         try:
             status_obj = api.kernels_status(KERNEL_SLUG)
             s = str(status_obj.status)
             print(f"[{i*10}s] Kaggle Worker Status: {s}")
 
-            if "RUNNING" in s:
+            if "RUNNING" in s and last_state != "RUNNING":
+                last_state = "RUNNING"
                 update_hf_job_status(50, "Kaggle worker running F5-TTS inference and video assembly...")
             elif "COMPLETE" in s:
                 print("[DONE] Kaggle execution finished successfully!")
                 update_hf_job_status(100, "Execution completed successfully! Video ready.", status="completed", asset_url=MASTER_VIDEO_URL)
                 return
             elif "ERROR" in s:
-                print(f"[!] Kaggle returned error state. Falling back to master asset...")
-                update_hf_job_status(100, "Audio & video rendered successfully. Final asset ready.", status="completed", asset_url=MASTER_VIDEO_URL)
-                return
+                fail_msg = getattr(status_obj, 'failure_message', None) or "Execution error in Kaggle container"
+                print(f"[!] Kaggle returned error state: {fail_msg}")
+                update_hf_job_status(0, f"Kaggle execution failed: {fail_msg}", status="error")
+                sys.exit(1)
         except Exception as e:
             print(f"[Kaggle Poll Warn] {e}")
 
-    # If timeout reached, mark completed with latest master asset
-    update_hf_job_status(100, "Video asset synchronized and ready for playback.", status="completed", asset_url=MASTER_VIDEO_URL)
+    # If timeout reached
+    print("[Timeout] Maximum polling duration reached.")
+    update_hf_job_status(0, "Execution monitoring timed out.", status="error")
+    sys.exit(1)
 
 if __name__ == "__main__":
     main()

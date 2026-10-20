@@ -7,12 +7,15 @@
 ## 1. Project Identity & Architecture
 - **Project Name**: Doris AI Storyteller & Sentence-Synchronized Video Automation
 - **Date Created**: 2026-10-13
-- **Last Modified**: 2026-10-20 10:20
+- **Last Modified**: 2026-10-20 10:55
 - **Modus Operandi**: `epic-automate` (100% Live Cloud Deployment)
   - **Frontend**: Live on Firebase Hosting (`https://dorisautomate.web.app`) — accessible globally from any browser or device.
-  - **Default Voice Model**: `✨ Hope — Professional, Clear & Natural` (cloned from ElevenLabs reference audio via F5-TTS). Doris Voice remains available as an optional voice option.
-  - **Cloud Orchestration**: GitHub Actions Cloud (`.github/workflows/trigger_pipeline.yml`) — triggers automatically via REST dispatch with selected `voice_model`.
-  - **Compute Server**: Kaggle T4 GPU (`dorisautomate/doris-storyteller-worker` with `machine_shape: "NvidiaTeslaT4"`, Kernel Version 5).
+  - **Tabs & Views**:
+    - **Studio / Generator**: Step-by-step studio with image selector, multi-voice picker, script alignment matrix, and live execution monitor.
+    - **Execution Logs & Video Library**: Dedicated dashboard tab with full history table of past runs, search/filter controls, direct video preview modal, download buttons, and Hugging Face cloud sync.
+  - **Default Voice Model**: `✨ Hope — Professional, Clear & Natural` (cloned from ElevenLabs reference audio). Hope Upbeat and Doris Voice available.
+  - **Cloud Orchestration**: GitHub Actions Cloud (`.github/workflows/trigger_pipeline.yml`) with state change monitoring (prevents HF commit rate limits).
+  - **Compute Server**: Kaggle T4 GPU (`dorisautomate/doris-storyteller-worker` Kernel Version 10).
   - **Asset Storage & Playback**: Hugging Face Datasets (`Dorisautomate/automation-assets`) with embedded HTML5 video preview player.
   - **Version Control**: GitHub repository (`https://github.com/Dorisautomate/doris-storyteller-automation`).
 
@@ -21,11 +24,13 @@
 ## 2. Infrastructure Endpoints & Identifiers
 | Service | Resource | Identifier / URL | Status |
 |---|---|---|---|
-| **Firebase Hosting** | Web Frontend | `https://dorisautomate.web.app` | 🟢 100% Live (Default Voice: Hope Professional) |
+| **Firebase Hosting** | Web Frontend | `https://dorisautomate.web.app` | 🟢 100% Live (Studio + Execution Logs Tabs) |
 | **Cloud Orchestrator** | GitHub Actions | `https://github.com/Dorisautomate/doris-storyteller-automation/actions` | 🟢 Cloud Workflow Verified (Multi-Voice Support) |
-| **Kaggle Kernel** | T4 GPU Worker | `https://www.kaggle.com/code/dorisautomate/doris-storyteller-worker` | 🟢 Kernel v5 Deployed & Verified |
-| **Hugging Face Datasets** | Asset Storage | `https://huggingface.co/datasets/Dorisautomate/automation-assets` | 🟢 Active (Hope & Doris Voice Slices Stored) |
-| **Output Video Asset** | Master MP4 (True F5-TTS Doris Voice Clone) | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_f5_cloned_story_video.mp4` | 🟢 Verified & Playing |
+| **Kaggle Kernel** | T4 GPU Worker | `https://www.kaggle.com/code/dorisautomate/doris-storyteller-worker` | 🟢 Kernel v10 Deployed |
+| **Hugging Face Datasets** | Asset Storage | `https://huggingface.co/datasets/Dorisautomate/automation-assets` | 🟢 Active (Hope & Doris Voice Slices & MP4s Stored) |
+| **Master Video (Hope Professional)** | 1080p MP4 | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/hope_professional_story_video.mp4` | 🟢 Verified & Playing |
+| **Master Video (Hope Upbeat)** | 1080p MP4 | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/hope_upbeat_story_video.mp4` | 🟢 Verified & Playing |
+| **Master Video (Doris Voice Clone)** | 1080p MP4 | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_f5_cloned_story_video.mp4` | 🟢 Verified & Playing |
 | **GitHub Repository** | Source Code | `https://github.com/Dorisautomate/doris-storyteller-automation` | 🟢 Synced |
 
 ---

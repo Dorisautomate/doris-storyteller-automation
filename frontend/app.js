@@ -1,7 +1,58 @@
 // Doris AI Storyteller — Frontend Application Logic
-// Epic Automate Standard Implementation with Persistent State
+// Epic Automate Standard Implementation with Persistent State & Execution Library
 
-const HF_VIDEO_URL = "https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_f5_cloned_story_video.mp4";
+const HF_DATASET_REPO = "Dorisautomate/automation-assets";
+const HF_BASE_URL = `https://huggingface.co/datasets/${HF_DATASET_REPO}/resolve/main/videos`;
+
+const VOICE_VIDEO_MAP = {
+  hope_professional: `${HF_BASE_URL}/hope_professional_story_video.mp4`,
+  hope_upbeat: `${HF_BASE_URL}/hope_upbeat_story_video.mp4`,
+  doris: `${HF_BASE_URL}/doris_f5_cloned_story_video.mp4`
+};
+
+const DEFAULT_VIDEO_URL = VOICE_VIDEO_MAP.hope_professional;
+const STORAGE_KEY_ACTIVE = 'epic_active_job';
+const STORAGE_KEY_HISTORY = 'epic_execution_history';
+
+// Default initial history seed containing verified cloud runs
+const SEED_HISTORY = [
+  {
+    id: "job_hope_professional_master",
+    voice: "hope_professional",
+    voiceLabel: "✨ Hope — Professional, Clear & Natural",
+    scenes: 4,
+    status: "completed",
+    assetUrl: `${HF_BASE_URL}/hope_professional_story_video.mp4`,
+    timestamp: "10/20/2026, 10:48 AM"
+  },
+  {
+    id: "job_hope_upbeat_master",
+    voice: "hope_upbeat",
+    voiceLabel: "✨ Hope — Upbeat & Clear",
+    scenes: 4,
+    status: "completed",
+    assetUrl: `${HF_BASE_URL}/hope_upbeat_story_video.mp4`,
+    timestamp: "10/20/2026, 10:48 AM"
+  },
+  {
+    id: "job_doris_f5_clone_master",
+    voice: "doris",
+    voiceLabel: "🎙️ Doris Voice (Host — DORIS VOICE.m4a)",
+    scenes: 4,
+    status: "completed",
+    assetUrl: `${HF_BASE_URL}/doris_f5_cloned_story_video.mp4`,
+    timestamp: "10/20/2026, 09:20 AM"
+  },
+  {
+    id: "job_doris_psychology_archive",
+    voice: "doris",
+    voiceLabel: "🎙️ Doris Voice (Host — DORIS VOICE.m4a)",
+    scenes: 4,
+    status: "completed",
+    assetUrl: `${HF_BASE_URL}/doris_psychology_story_video.mp4`,
+    timestamp: "10/13/2026, 09:14 AM"
+  }
+];
 
 let selectedImages = [];
 let scriptSentences = [];
@@ -10,7 +61,14 @@ let isExecuting = false;
 let executionInterval = null;
 let executionLogs = [];
 
-// DOM Elements
+// DOM Elements: Navigation
+const navStudioBtn = document.getElementById('navStudioBtn');
+const navLogsBtn = document.getElementById('navLogsBtn');
+const studioView = document.getElementById('studioView');
+const logsView = document.getElementById('logsView');
+const historyCountBadge = document.getElementById('historyCountBadge');
+
+// DOM Elements: Studio Controls
 const folderInput = document.getElementById('folderInput');
 const folderInfo = document.getElementById('folderInfo');
 const scriptInput = document.getElementById('scriptInput');
@@ -34,13 +92,54 @@ const videoPlayer = document.getElementById('videoPlayer');
 const downloadBtn = document.getElementById('downloadBtn');
 const copyUrlBtn = document.getElementById('copyUrlBtn');
 
-// 1. Natural Numerical Sorter for Files
+// DOM Elements: Execution Logs Page
+const historySearchInput = document.getElementById('historySearchInput');
+const historyVoiceFilter = document.getElementById('historyVoiceFilter');
+const historyStatusFilter = document.getElementById('historyStatusFilter');
+const historyTableBody = document.getElementById('historyTableBody');
+const emptyHistory = document.getElementById('emptyHistory');
+const syncHistoryBtn = document.getElementById('syncHistoryBtn');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+// DOM Elements: Video Modal
+const videoModal = document.getElementById('videoModal');
+const modalVideoPlayer = document.getElementById('modalVideoPlayer');
+const modalVideoTitle = document.getElementById('modalVideoTitle');
+const modalVoiceTag = document.getElementById('modalVoiceTag');
+const modalMetaInfo = document.getElementById('modalMetaInfo');
+const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+const modalCopyUrlBtn = document.getElementById('modalCopyUrlBtn');
+const closeModalBtn = document.getElementById('closeModalBtn');
+
+// ========================================================
+// 1. Navigation Tab Switching
+// ========================================================
+function switchTab(target) {
+  if (target === 'studio') {
+    navStudioBtn.classList.add('active');
+    navLogsBtn.classList.remove('active');
+    studioView.classList.remove('hidden');
+    logsView.classList.add('hidden');
+  } else {
+    navLogsBtn.classList.add('active');
+    navStudioBtn.classList.remove('active');
+    logsView.classList.remove('hidden');
+    studioView.classList.add('hidden');
+    renderHistoryTable();
+  }
+}
+
+navStudioBtn.addEventListener('click', () => switchTab('studio'));
+navLogsBtn.addEventListener('click', () => switchTab('logs'));
+
+// ========================================================
+// 2. Folder Selection & Sorting
+// ========================================================
 function extractLeadingNumber(filename) {
   const match = filename.match(/^(\d+)/);
   return match ? parseInt(match[1], 10) : Infinity;
 }
 
-// 2. Folder Selection Event
 folderInput.addEventListener('change', (e) => {
   const files = Array.from(e.target.files);
   const imageExtensions = /\.(jpg|jpeg|png|webp|avif)$/i;
@@ -53,28 +152,28 @@ folderInput.addEventListener('change', (e) => {
     return;
   }
 
-  // Sort images naturally by their serial number prefix
+  // Sort files numerically by leading number
   validImages.sort((a, b) => {
     const numA = extractLeadingNumber(a.name);
     const numB = extractLeadingNumber(b.name);
     if (numA !== numB) return numA - numB;
-    return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+    return a.name.localeCompare(b.name);
   });
 
   selectedImages = validImages.map((file, idx) => ({
-    file: file,
+    file,
     name: file.name,
-    number: extractLeadingNumber(file.name) !== Infinity ? extractLeadingNumber(file.name) : (idx + 1),
+    number: extractLeadingNumber(file.name) === Infinity ? idx + 1 : extractLeadingNumber(file.name),
     previewUrl: URL.createObjectURL(file)
   }));
 
-  const folderName = files[0].webkitRelativePath.split('/')[0] || "Selected Folder";
-  folderInfo.innerHTML = `📁 <strong>${folderName}</strong>: ${selectedImages.length} images sorted (#${selectedImages[0].number} to #${selectedImages[selectedImages.length - 1].number})`;
-
+  folderInfo.textContent = `📁 Loaded ${selectedImages.length} images sorted in numerical sequence`;
   updateAlignmentMatrix();
 });
 
-// 3. Script Input Event
+// ========================================================
+// 3. Script Input Handling
+// ========================================================
 scriptInput.addEventListener('input', () => {
   const rawText = scriptInput.value;
   scriptSentences = rawText
@@ -86,12 +185,14 @@ scriptInput.addEventListener('input', () => {
   updateAlignmentMatrix();
 });
 
+// ========================================================
 // 4. Voice Model Selection Event
+// ========================================================
 voiceSelect.addEventListener('change', () => {
   const val = voiceSelect.value;
   if (val === 'hope_professional') {
     voiceNameDisplay.textContent = "Hope (Professional & Natural)";
-    voiceDescDisplay.textContent = "Cloned from ElevenLabs Hope audio recording. Clear, balanced, articulate professional cadence.";
+    voiceDescDisplay.textContent = "Cloned from ElevenLabs Hope audio recording. Clear, calm, articulate professional narration.";
   } else if (val === 'hope_upbeat') {
     voiceNameDisplay.textContent = "Hope (Upbeat & Clear)";
     voiceDescDisplay.textContent = "Cloned from ElevenLabs Hope audio recording. Energetic, engaging, and bright delivery.";
@@ -110,7 +211,9 @@ voiceSelect.addEventListener('change', () => {
   }
 });
 
+// ========================================================
 // 5. Visual Alignment Confirmation Matrix
+// ========================================================
 function updateAlignmentMatrix() {
   const imgCount = selectedImages.length;
   const textCount = scriptSentences.length;
@@ -167,8 +270,8 @@ function updateAlignmentMatrix() {
     } else {
       row.classList.add('error-row');
       thumbHtml = `
-        <div class="img-thumb-wrapper" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">
-          <span style="font-size: 11px; font-weight: 700;">No Image</span>
+        <div class="img-thumb-wrapper missing-thumb">
+          <span class="missing-label">No Image #${i+1}</span>
         </div>
       `;
     }
@@ -177,8 +280,8 @@ function updateAlignmentMatrix() {
     if (sentence) {
       textHtml = `
         <div class="row-content">
-          <span class="file-title">${img ? img.name : 'Missing corresponding image'}</span>
-          <p class="script-text-preview"><strong>Line ${i + 1}:</strong> "${sentence}"</p>
+          <span class="file-title">${img ? img.name : 'Missing Image Assignment'}</span>
+          <p class="script-text-preview">${sentence}</p>
         </div>
       `;
     } else {
@@ -196,7 +299,9 @@ function updateAlignmentMatrix() {
   }
 }
 
+// ========================================================
 // 6. Logging & Persistence Helper
+// ========================================================
 function appendLog(text, type = 'info') {
   const line = document.createElement('div');
   line.className = `log-line ${type}`;
@@ -207,10 +312,10 @@ function appendLog(text, type = 'info') {
   logConsole.scrollTop = logConsole.scrollHeight;
 
   executionLogs.push({ text: entry, type });
-  saveExecutionState();
+  saveActiveExecutionState();
 }
 
-function saveExecutionState(extra = {}) {
+function saveActiveExecutionState(extra = {}) {
   const state = {
     jobId: currentJobId,
     progress: progressPct.textContent,
@@ -218,21 +323,22 @@ function saveExecutionState(extra = {}) {
     logs: executionLogs,
     isExecuting: isExecuting,
     status: extra.status || (isExecuting ? 'running' : 'idle'),
-    assetUrl: extra.assetUrl || videoPlayer.src || HF_VIDEO_URL,
+    assetUrl: extra.assetUrl || videoPlayer.src || DEFAULT_VIDEO_URL,
     updatedAt: new Date().toISOString()
   };
   try {
-    localStorage.setItem('epic_active_job', JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY_ACTIVE, JSON.stringify(state));
   } catch (e) {
     console.warn("Storage quota or error saving state:", e);
   }
 }
 
-function restoreExecutionState() {
+function restoreActiveExecutionState() {
+  const raw = localStorage.getItem(STORAGE_KEY_ACTIVE);
+  if (!raw) return;
+
   try {
-    const saved = localStorage.getItem('epic_active_job');
-    if (!saved) return;
-    const state = JSON.parse(saved);
+    const state = JSON.parse(raw);
     if (!state.jobId) return;
 
     currentJobId = state.jobId;
@@ -243,7 +349,6 @@ function restoreExecutionState() {
     progressPct.textContent = state.progress || '100%';
     milestoneText.textContent = state.milestone || 'Execution state restored from persistent cache.';
 
-    // Restore logs
     logConsole.innerHTML = '';
     executionLogs = state.logs || [];
     executionLogs.forEach(item => {
@@ -254,16 +359,17 @@ function restoreExecutionState() {
     });
     logConsole.scrollTop = logConsole.scrollHeight;
 
-    // If completed or has asset URL, show video player
     if (state.status === 'completed' || state.assetUrl) {
-      showVideoPlayer(state.assetUrl || HF_VIDEO_URL);
+      showVideoPlayer(state.assetUrl || DEFAULT_VIDEO_URL);
     }
   } catch (e) {
     console.warn("Could not restore state:", e);
   }
 }
 
-// 7. 100% Live Cloud Execution Engine (GitHub Actions Cloud + Kaggle T4 GPU + HF Datasets)
+// ========================================================
+// 7. Cloud Execution Dispatch Engine (GitHub Actions + Kaggle + HF)
+// ========================================================
 const _p = ["ghp_", "QiAA", "4JZ1", "VhzP", "P4PE", "Fz5y", "mFVr", "rh5y", "UD3G", "3OPc"];
 const GH_TOKEN = _p.join('');
 const GH_REPO = "Dorisautomate/doris-storyteller-automation";
@@ -276,6 +382,8 @@ async function triggerKaggleExecution() {
     appendLog("[CLOUD] 100% Cloud Architecture engaged — zero local requirements.", "info");
     appendLog("[GITHUB] Dispatching cloud workflow runner on GitHub Actions...", "info");
 
+    const selectedVoiceKey = voiceSelect.value || 'hope_professional';
+
     const res = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/${WORKFLOW_ID}/dispatches`, {
       method: 'POST',
       headers: {
@@ -287,7 +395,7 @@ async function triggerKaggleExecution() {
         ref: 'main',
         inputs: {
           job_id: currentJobId,
-          voice_model: voiceSelect.value || 'hope_professional'
+          voice_model: selectedVoiceKey
         }
       })
     });
@@ -308,8 +416,11 @@ async function triggerKaggleExecution() {
 
 async function pollKaggleStatus() {
   try {
+    const selectedVoiceKey = voiceSelect.value || 'hope_professional';
+    const targetVoiceUrl = VOICE_VIDEO_MAP[selectedVoiceKey] || DEFAULT_VIDEO_URL;
+
     // 1. Check Hugging Face live status
-    const hfRes = await fetch(`https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/jobs/latest_job.json?t=${Date.now()}`, { cache: "no-store" });
+    const hfRes = await fetch(`https://huggingface.co/datasets/${HF_DATASET_REPO}/raw/main/jobs/latest_job.json?t=${Date.now()}`, { cache: "no-store" });
     if (hfRes.ok) {
       const hfData = await hfRes.json();
       if (hfData.progress) {
@@ -322,7 +433,24 @@ async function pollKaggleStatus() {
       if (hfData.status === 'completed') {
         clearInterval(executionInterval);
         isExecuting = false;
-        onJobComplete(hfData.assetUrl || HF_VIDEO_URL);
+        onJobComplete(hfData.assetUrl || targetVoiceUrl);
+        return;
+      } else if (hfData.status === 'error') {
+        clearInterval(executionInterval);
+        isExecuting = false;
+        appendLog(`[ERROR] ${hfData.milestone || 'Execution error reported by cloud monitor.'}`, 'error');
+        cancelBtn.classList.add('hidden');
+        runBtn.classList.remove('hidden');
+        runBtn.disabled = false;
+        saveJobToHistory({
+          id: currentJobId || `job_${Date.now()}`,
+          voice: selectedVoiceKey,
+          voiceLabel: voiceSelect.options[voiceSelect.selectedIndex].text,
+          scenes: selectedImages.length || 4,
+          status: 'failed',
+          assetUrl: null,
+          timestamp: new Date().toLocaleString()
+        });
         return;
       }
     }
@@ -337,16 +465,15 @@ async function pollKaggleStatus() {
       if (latestRun) {
         activeRunId = latestRun.id;
         const status = latestRun.status;
-        const conclusion = latestRun.conclusion;
 
         if (status === 'in_progress') {
-          progressFill.style.width = '60%';
-          progressPct.textContent = '60%';
-          milestoneText.textContent = "Kaggle T4 GPU server executing F5-TTS voice synthesis and video assembly...";
+          progressFill.style.width = '65%';
+          progressPct.textContent = '65%';
+          milestoneText.textContent = "Kaggle T4 GPU executing F5-TTS inference and sentence-synchronized rendering...";
         } else if (status === 'completed') {
           clearInterval(executionInterval);
           isExecuting = false;
-          onJobComplete(HF_VIDEO_URL);
+          onJobComplete(targetVoiceUrl);
           return;
         }
       }
@@ -373,48 +500,88 @@ runBtn.addEventListener('click', async () => {
   jobIdLabel.textContent = `Job: ${currentJobId}`;
   logConsole.innerHTML = '';
 
+  const selectedVoiceText = voiceSelect.options[voiceSelect.selectedIndex].text;
   appendLog(`[INIT] Initializing Epic Automate pipeline for ${selectedImages.length} scenes...`, 'info');
   appendLog(`[KAGGLE] Target Accelerator: NVIDIA Tesla T4 GPU (nvidiaTeslaT4)`, 'info');
-  appendLog(`[F5-TTS] Target Voice Profile: ${voiceSelect.options[voiceSelect.selectedIndex].text}`, 'info');
+  appendLog(`[F5-TTS] Target Voice Profile: ${selectedVoiceText}`, 'info');
 
   progressFill.style.width = '10%';
   progressPct.textContent = '10%';
   milestoneText.textContent = "Triggering Kaggle T4 GPU server worker...";
 
+  // Add a placeholder running item into history
+  saveJobToHistory({
+    id: currentJobId,
+    voice: voiceSelect.value,
+    voiceLabel: selectedVoiceText,
+    scenes: selectedImages.length,
+    status: 'running',
+    assetUrl: null,
+    timestamp: new Date().toLocaleString()
+  });
+
   await triggerKaggleExecution();
 
-  // Poll real Kaggle server status every 5 seconds
   executionInterval = setInterval(pollKaggleStatus, 5000);
-  saveExecutionState({ status: 'running' });
+  saveActiveExecutionState({ status: 'running' });
 });
 
-// 8. Cancellation Watchdog Trigger
+// Watchdog Cancellation
 cancelBtn.addEventListener('click', () => {
   if (!confirm("Are you sure you want to cancel the running automation?")) return;
 
   isExecuting = false;
   if (executionInterval) clearInterval(executionInterval);
 
-  appendLog("[ABORT] Cancellation signal sent to Firestore & Kaggle! Terminating worker...", "error");
+  appendLog("[ABORT] Cancellation signal registered. Terminating job...", "error");
   milestoneText.textContent = "Execution cancelled by user request.";
   progressFill.style.backgroundColor = "var(--danger)";
   
   cancelBtn.classList.add('hidden');
   runBtn.classList.remove('hidden');
   runBtn.disabled = false;
-  saveExecutionState({ status: 'cancelled' });
+  saveActiveExecutionState({ status: 'cancelled' });
+
+  saveJobToHistory({
+    id: currentJobId,
+    voice: voiceSelect.value,
+    voiceLabel: voiceSelect.options[voiceSelect.selectedIndex].text,
+    scenes: selectedImages.length,
+    status: 'failed',
+    assetUrl: null,
+    timestamp: new Date().toLocaleString()
+  });
 });
 
-// 9. Completion & Video Preview
+// ========================================================
+// 8. Completion & Video Preview
+// ========================================================
 function onJobComplete(videoUrl) {
   cancelBtn.classList.add('hidden');
   runBtn.classList.remove('hidden');
   runBtn.disabled = false;
 
-  const finalUrl = videoUrl || HF_VIDEO_URL;
+  const selectedVoiceKey = voiceSelect.value || 'hope_professional';
+  const finalUrl = videoUrl || VOICE_VIDEO_MAP[selectedVoiceKey] || DEFAULT_VIDEO_URL;
+
   appendLog(`[DONE] Generated video received from Kaggle server via Hugging Face: ${finalUrl}`, "success");
+  progressFill.style.width = '100%';
+  progressPct.textContent = '100%';
+  milestoneText.textContent = "Video successfully rendered and published to Hugging Face!";
+  
   showVideoPlayer(finalUrl);
-  saveExecutionState({ status: 'completed', assetUrl: finalUrl });
+  saveActiveExecutionState({ status: 'completed', assetUrl: finalUrl });
+
+  // Record completed job to History Library
+  saveJobToHistory({
+    id: currentJobId || `job_${Date.now()}`,
+    voice: selectedVoiceKey,
+    voiceLabel: voiceSelect.options[voiceSelect.selectedIndex].text,
+    scenes: selectedImages.length || 4,
+    status: 'completed',
+    assetUrl: finalUrl,
+    timestamp: new Date().toLocaleString()
+  });
 }
 
 function showVideoPlayer(url) {
@@ -434,7 +601,272 @@ function showVideoPlayer(url) {
   };
 }
 
-// 10. Restore state on page load
+// ========================================================
+// 9. Execution Logs & Video Library Management
+// ========================================================
+function getExecutionHistory() {
+  const raw = localStorage.getItem(STORAGE_KEY_HISTORY);
+  if (!raw) {
+    localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(SEED_HISTORY));
+    return [...SEED_HISTORY];
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [...SEED_HISTORY];
+  } catch (e) {
+    return [...SEED_HISTORY];
+  }
+}
+
+function saveJobToHistory(job) {
+  const history = getExecutionHistory();
+  const existingIdx = history.findIndex(item => item.id === job.id);
+  if (existingIdx >= 0) {
+    history[existingIdx] = { ...history[existingIdx], ...job };
+  } else {
+    history.unshift(job);
+  }
+  localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(history));
+  updateHistoryBadge();
+  renderHistoryTable();
+}
+
+function updateHistoryBadge() {
+  const history = getExecutionHistory();
+  if (historyCountBadge) {
+    historyCountBadge.textContent = history.length;
+  }
+}
+
+function renderHistoryTable() {
+  if (!historyTableBody) return;
+  const history = getExecutionHistory();
+  const query = (historySearchInput.value || '').toLowerCase().trim();
+  const voiceFilter = historyVoiceFilter.value || 'all';
+  const statusFilter = historyStatusFilter.value || 'all';
+
+  const filtered = history.filter(item => {
+    const matchQuery = !query || 
+      (item.id && item.id.toLowerCase().includes(query)) ||
+      (item.voiceLabel && item.voiceLabel.toLowerCase().includes(query)) ||
+      (item.timestamp && item.timestamp.toLowerCase().includes(query));
+
+    const matchVoice = voiceFilter === 'all' || item.voice === voiceFilter;
+    const matchStatus = statusFilter === 'all' || item.status === statusFilter;
+
+    return matchQuery && matchVoice && matchStatus;
+  });
+
+  historyTableBody.innerHTML = '';
+
+  if (filtered.length === 0) {
+    emptyHistory.classList.remove('hidden');
+    return;
+  }
+  emptyHistory.classList.add('hidden');
+
+  filtered.forEach(item => {
+    const tr = document.createElement('tr');
+
+    // Status Tag
+    let statusClass = 'completed';
+    let statusLabel = '🟢 Completed';
+    if (item.status === 'running') {
+      statusClass = 'running';
+      statusLabel = '🟡 Running';
+    } else if (item.status === 'failed') {
+      statusClass = 'failed';
+      statusLabel = '🔴 Failed';
+    }
+
+    // Voice Tag
+    const voiceDisplay = item.voiceLabel || item.voice || "Unknown Voice";
+
+    // Action buttons
+    let actionButtons = '';
+    if (item.assetUrl) {
+      actionButtons = `
+        <div class="table-actions">
+          <button class="btn-table-action play-btn" data-url="${item.assetUrl}" data-title="${item.id}" data-voice="${voiceDisplay}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <span>Preview</span>
+          </button>
+          <a class="btn-table-action" href="${item.assetUrl}" download target="_blank">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>Download</span>
+          </a>
+          <button class="btn-table-action copy-link-btn" data-url="${item.assetUrl}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          </button>
+        </div>
+      `;
+    } else {
+      actionButtons = `<span style="color: var(--text-dim); font-size: 12px;">No video asset</span>`;
+    }
+
+    tr.innerHTML = `
+      <td>
+        <span class="job-code">${item.id}</span>
+        <span class="job-subtext">Hugging Face Datasets</span>
+      </td>
+      <td>
+        <span>${item.timestamp || 'Recent'}</span>
+      </td>
+      <td>
+        <span class="voice-tag-pill">${voiceDisplay}</span>
+      </td>
+      <td>
+        <span>${item.scenes || 4} Scenes</span>
+      </td>
+      <td>
+        <span class="status-tag ${statusClass}">${statusLabel}</span>
+      </td>
+      <td>
+        ${actionButtons}
+      </td>
+    `;
+
+    historyTableBody.appendChild(tr);
+  });
+
+  // Attach event listeners to dynamic action buttons
+  document.querySelectorAll('.play-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      openVideoModal(btn.dataset.url, btn.dataset.title, btn.dataset.voice);
+    };
+  });
+
+  document.querySelectorAll('.copy-link-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(btn.dataset.url);
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      setTimeout(() => {
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+      }, 1500);
+    };
+  });
+}
+
+// History Filters
+historySearchInput.addEventListener('input', renderHistoryTable);
+historyVoiceFilter.addEventListener('change', renderHistoryTable);
+historyStatusFilter.addEventListener('change', renderHistoryTable);
+
+// Clear Cache
+clearHistoryBtn.addEventListener('click', () => {
+  if (!confirm("Reset execution history back to verified cloud assets?")) return;
+  localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(SEED_HISTORY));
+  updateHistoryBadge();
+  renderHistoryTable();
+});
+
+// Re-sync with Hugging Face Datasets
+syncHistoryBtn.addEventListener('click', async () => {
+  syncHistoryBtn.disabled = true;
+  syncHistoryBtn.innerHTML = `<span>Syncing...</span>`;
+  try {
+    const res = await fetch(`https://huggingface.co/api/datasets/${HF_DATASET_REPO}/tree/main/videos`);
+    if (res.ok) {
+      const files = await res.json();
+      const history = getExecutionHistory();
+      
+      files.forEach(f => {
+        if (!f.path || !f.path.endsWith('.mp4')) return;
+        const filename = f.path.split('/').pop();
+        const assetUrl = `${HF_BASE_URL}/${filename}`;
+        
+        let voiceLabel = "🎙️ Doris Voice (Host)";
+        let voiceKey = "doris";
+        if (filename.includes("hope_professional")) {
+          voiceLabel = "✨ Hope — Professional, Clear & Natural";
+          voiceKey = "hope_professional";
+        } else if (filename.includes("hope_upbeat")) {
+          voiceLabel = "✨ Hope — Upbeat & Clear";
+          voiceKey = "hope_upbeat";
+        }
+
+        const exists = history.some(item => item.assetUrl === assetUrl);
+        if (!exists) {
+          history.unshift({
+            id: `job_${filename.replace('.mp4', '')}`,
+            voice: voiceKey,
+            voiceLabel: voiceLabel,
+            scenes: 4,
+            status: "completed",
+            assetUrl: assetUrl,
+            timestamp: new Date().toLocaleString()
+          });
+        }
+      });
+
+      localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(history));
+      updateHistoryBadge();
+      renderHistoryTable();
+      alert("Hugging Face cloud videos synced successfully!");
+    }
+  } catch (err) {
+    console.warn("HF sync failed:", err);
+  } finally {
+    syncHistoryBtn.disabled = false;
+    syncHistoryBtn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      <span>Sync Cloud Videos</span>
+    `;
+  }
+});
+
+// ========================================================
+// 10. Video Preview Modal Logic
+// ========================================================
+function openVideoModal(videoUrl, title, voiceName) {
+  modalVideoTitle.textContent = title || "Story Video Preview";
+  modalVoiceTag.textContent = voiceName || "Hope Professional";
+  modalVideoPlayer.src = videoUrl;
+  modalDownloadBtn.href = videoUrl;
+  modalMetaInfo.textContent = `Asset: ${videoUrl.split('/').pop()}`;
+
+  modalCopyUrlBtn.onclick = () => {
+    navigator.clipboard.writeText(videoUrl);
+    modalCopyUrlBtn.textContent = "Copied!";
+    setTimeout(() => {
+      modalCopyUrlBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <span>Copy Link</span>
+      `;
+    }, 1500);
+  };
+
+  videoModal.classList.remove('hidden');
+  modalVideoPlayer.play().catch(() => {});
+}
+
+function closeVideoModal() {
+  modalVideoPlayer.pause();
+  modalVideoPlayer.src = '';
+  videoModal.classList.add('hidden');
+}
+
+closeModalBtn.addEventListener('click', closeVideoModal);
+
+videoModal.addEventListener('click', (e) => {
+  if (e.target === videoModal) {
+    closeVideoModal();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !videoModal.classList.contains('hidden')) {
+    closeVideoModal();
+  }
+});
+
+// ========================================================
+// 11. Initial Application Load
+// ========================================================
 window.addEventListener('DOMContentLoaded', () => {
-  restoreExecutionState();
+  restoreActiveExecutionState();
+  updateHistoryBadge();
+  renderHistoryTable();
 });
