@@ -32,7 +32,8 @@
 | **Master Video (Hope Professional)** | 1080p MP4 | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/hope_professional_story_video.mp4` | 🟢 Verified & Playing |
 | **Master Video (Hope Upbeat)** | 1080p MP4 | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/hope_upbeat_story_video.mp4` | 🟢 Verified & Playing |
 | **Master Video (Doris Voice Clone)** | 1080p MP4 | `https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_f5_cloned_story_video.mp4` | 🟢 Verified & Playing |
-| **GitHub Repository** | Source Code | `https://github.com/Dorisautomate/doris-storyteller-automation` | 🟢 Synced |
+| **Doris Master Skill Repo** | Public GitHub Repo | `https://github.com/Dorisautomate/Doris` | 🟢 Published & Public |
+| **GitHub Repository** | Automation Source Code | `https://github.com/Dorisautomate/doris-storyteller-automation` | 🟢 Synced |
 
 ---
 
