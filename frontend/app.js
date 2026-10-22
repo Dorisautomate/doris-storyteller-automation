@@ -858,10 +858,12 @@ async function rehydrateCloudState() {
 
     if (isRunning) {
       isExecuting = true;
+      jobStartTime = Date.now();
       currentJobId = (hfData && hfData.jobId) || (latestRun && `run_${latestRun.id}`) || `epic_job_cloud`;
       jobIdLabel.textContent = `Job: ${currentJobId}`;
 
       runBtn.classList.add('hidden');
+      runBtn.disabled = true;
       cancelBtn.classList.remove('hidden');
       monitorCard.classList.remove('hidden');
       videoCard.classList.add('hidden');
@@ -1022,40 +1024,36 @@ async function pollKaggleStatus() {
       }
     }
 
-    // 2. Query GitHub Actions cloud run status
-    const runsRes = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/runs?per_page=1`, {
-      headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' },
-      cache: "no-store"
-    });
-    if (runsRes.ok) {
-      const runsData = await runsRes.json();
-      const latestRun = runsData.workflow_runs && runsData.workflow_runs[0];
-      if (latestRun) {
-        activeRunId = latestRun.id;
-        const status = latestRun.status;
-        const conclusion = latestRun.conclusion;
+    // 2. Query GitHub Actions cloud run status (only if HF data didn't already provide status)
+    // Skip GitHub check entirely if HF reported a valid running/completed status for our job
+    // This prevents stale failed GitHub runs from killing an active Kaggle worker
+    if (!hfRes.ok || !hfRes) {
+      const runsRes = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/runs?per_page=1`, {
+        headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' },
+        cache: "no-store"
+      });
+      if (runsRes.ok) {
+        const runsData = await runsRes.json();
+        const latestRun = runsData.workflow_runs && runsData.workflow_runs[0];
+        if (latestRun) {
+          activeRunId = latestRun.id;
+          const status = latestRun.status;
+          const conclusion = latestRun.conclusion;
 
-        if (status === 'in_progress') {
-          if (!progressPct.textContent || progressPct.textContent === '0%') {
-            progressFill.style.width = isPremiumStudio ? '45%' : '65%';
-            progressPct.textContent = isPremiumStudio ? '45%' : '65%';
-          }
-        } else if (status === 'completed') {
-          if (conclusion === 'success') {
-            clearInterval(executionInterval);
-            isExecuting = false;
-            onJobComplete(targetVoiceUrl);
-            return;
-          } else if (conclusion === 'failure') {
-            if (elapsedSec > 120) {
+          if (status === 'in_progress') {
+            if (!progressPct.textContent || progressPct.textContent === '0%') {
+              progressFill.style.width = isPremiumStudio ? '45%' : '65%';
+              progressPct.textContent = isPremiumStudio ? '45%' : '65%';
+            }
+          } else if (status === 'completed') {
+            if (conclusion === 'success') {
               clearInterval(executionInterval);
               isExecuting = false;
-              appendLog(`[ERROR] Cloud workflow execution failed in GitHub Actions.`, 'error');
-              cancelBtn.classList.add('hidden');
-              runBtn.classList.remove('hidden');
-              runBtn.disabled = false;
+              onJobComplete(targetVoiceUrl);
               return;
             }
+            // Do NOT kill on GitHub failure — the Kaggle kernel runs independently
+            // and reports its own status via HF latest_job.json
           }
         }
       }
