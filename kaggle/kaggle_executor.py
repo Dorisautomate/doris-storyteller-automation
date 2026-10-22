@@ -223,7 +223,7 @@ if IS_PREMIUM:
     import concurrent.futures
 
     def process_premium_scene(idx, item):
-        nonlocal completed_scenes
+        global completed_scenes
         sn = item.get("sn", idx + 1)
         sentence = item.get("sentence", "")
         prompt = item.get("prompt", "")

@@ -78,7 +78,7 @@ const SEED_HISTORY = [
 let selectedImages = [];
 let scriptSentences = [];
 let csvPrompts = [];
-let isPremiumStudio = localStorage.getItem(STORAGE_KEY_STUDIO_MODE) === 'premium';
+let isPremiumStudio = localStorage.getItem(STORAGE_KEY_STUDIO_MODE) !== 'standard';
 let currentJobId = null;
 let isExecuting = false;
 let executionInterval = null;
@@ -341,15 +341,34 @@ function getSavedKieApiKey() {
 
 async function syncScriptToHuggingFace(csvText) {
   try {
-    const res = await fetch(`https://huggingface.co/api/datasets/${HF_DATASET_REPO}/raw/main/scripts/latest_script.csv`, {
-      method: 'PUT',
+    const utf8Bytes = new TextEncoder().encode(csvText);
+    let binary = '';
+    for (let i = 0; i < utf8Bytes.byteLength; i++) {
+      binary += String.fromCharCode(utf8Bytes[i]);
+    }
+    const b64 = btoa(binary);
+
+    const res = await fetch(`https://huggingface.co/api/datasets/${HF_DATASET_REPO}/commit/main`, {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${HF_WRITE_TOKEN}`,
-        'Content-Type': 'text/plain'
+        'Content-Type': 'application/json'
       },
-      body: csvText
+      body: JSON.stringify({
+        summary: 'Update latest_script.csv via Doris Web App',
+        operations: [
+          {
+            key: 'file',
+            value: {
+              path: 'scripts/latest_script.csv',
+              content: b64,
+              encoding: 'base64'
+            }
+          }
+        ]
+      })
     });
-    console.log("Script synced to HF Datasets repository:", res.status);
+    console.log("Script committed to HF Datasets repository:", res.status);
     return res.ok;
   } catch (err) {
     console.warn("Script sync warning:", err);
@@ -784,6 +803,110 @@ function restoreActiveExecutionState() {
   }
 }
 
+async function rehydrateCloudState() {
+  try {
+    // 1. Fetch latest active CSV dataset (the 180 scenes) from Hugging Face Datasets
+    const scriptRes = await fetch(`https://huggingface.co/datasets/${HF_DATASET_REPO}/raw/main/scripts/latest_script.csv?t=${Date.now()}`, { cache: "no-store" });
+    if (scriptRes.ok) {
+      const csvContent = await scriptRes.text();
+      const rows = parseCSV(csvContent);
+      if (rows && rows.length > 0) {
+        csvPrompts = rows;
+        scriptSentences = rows.map(r => r.sentence);
+        if (scriptInput) scriptInput.value = scriptSentences.join('\n');
+        if (lineCountBadge) lineCountBadge.textContent = `${rows.length} Scenes (15 min)`;
+        if (csvFileInfo) csvFileInfo.textContent = `📁 latest_script.csv (${rows.length} scenes synced from cloud)`;
+        if (csvRowsBadge) csvRowsBadge.textContent = `${rows.length} Scenes`;
+
+        setStudioMode(true);
+        if (studioModeToggle) studioModeToggle.checked = true;
+        updateAlignmentMatrix();
+      }
+    }
+
+    // 2. Query Hugging Face latest_job.json
+    let hfData = null;
+    try {
+      const jobRes = await fetch(`https://huggingface.co/datasets/${HF_DATASET_REPO}/raw/main/jobs/latest_job.json?t=${Date.now()}`, { cache: "no-store" });
+      if (jobRes.ok) {
+        hfData = await jobRes.json();
+      }
+    } catch (e) {
+      console.warn("HF job status check warning:", e);
+    }
+
+    // 3. Query GitHub Actions for active workflow runs
+    let isGhRunning = false;
+    let latestRun = null;
+    try {
+      const runsRes = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/runs?per_page=1`, {
+        headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' },
+        cache: "no-store"
+      });
+      if (runsRes.ok) {
+        const runsData = await runsRes.json();
+        latestRun = runsData.workflow_runs && runsData.workflow_runs[0];
+        if (latestRun && latestRun.status === 'in_progress') {
+          isGhRunning = true;
+        }
+      }
+    } catch (e) {
+      console.warn("GitHub Actions check warning:", e);
+    }
+
+    const isRunning = isGhRunning || (hfData && hfData.status === 'running');
+
+    if (isRunning) {
+      isExecuting = true;
+      currentJobId = (hfData && hfData.jobId) || (latestRun && `run_${latestRun.id}`) || `epic_job_cloud`;
+      jobIdLabel.textContent = `Job: ${currentJobId}`;
+
+      runBtn.classList.add('hidden');
+      cancelBtn.classList.remove('hidden');
+      monitorCard.classList.remove('hidden');
+      videoCard.classList.add('hidden');
+
+      const pct = (hfData && hfData.progress) || '20%';
+      progressFill.style.width = pct;
+      progressPct.textContent = pct;
+      milestoneText.textContent = (hfData && hfData.milestone) || "Cloud GPU worker actively executing 180 scenes...";
+
+      // Clear and render live status in console
+      logConsole.innerHTML = '';
+      appendLog(`[CLOUD REHYDRATION] 💎 Connected to active cloud task: ${currentJobId}`, 'info');
+      appendLog(`[CLOUD] Generation Engine: Kie.ai NanoBanana 2 Lite (16:9, 1K Landscape)`, 'info');
+      appendLog(`[CLOUD] Narration & Audio: F5-TTS Doris Voice Clone`, 'info');
+      appendLog(`[CLOUD] Total Scenes: ${scriptSentences.length || 180} scenes active in queue`, 'info');
+      appendLog(`[KAGGLE] Accelerator: NVIDIA Tesla T4 GPU Autonomous Worker`, 'info');
+      if (hfData && hfData.milestone) {
+        appendLog(`[MILESTONE] ${hfData.milestone}`, 'success');
+      }
+
+      if (executionInterval) clearInterval(executionInterval);
+      executionInterval = setInterval(pollKaggleStatus, 4000);
+      saveActiveExecutionState({ status: 'running' });
+    } else if (hfData && hfData.status === 'completed') {
+      showVideoPlayer(hfData.assetUrl || DEFAULT_VIDEO_URL);
+    } else if (hfData && hfData.status === 'error') {
+      monitorCard.classList.remove('hidden');
+      runBtn.classList.remove('hidden');
+      runBtn.disabled = false;
+      cancelBtn.classList.add('hidden');
+      progressFill.style.width = '100%';
+      progressFill.style.backgroundColor = 'var(--danger)';
+      progressPct.textContent = 'Error';
+      milestoneText.textContent = hfData.milestone || 'Previous cloud run reported an issue. Click Run Video Automation to execute.';
+      jobIdLabel.textContent = `Job: ${hfData.jobId || 'N/A'}`;
+      logConsole.innerHTML = '';
+      appendLog(`[CLOUD STATUS] Previous Job: ${hfData.jobId}`, 'warning');
+      appendLog(`[ERROR] ${hfData.milestone || 'Cloud error'}`, 'error');
+      appendLog(`[READY] All ${scriptSentences.length || 180} scenes are loaded and ready in Studio. Click "Run Video Automation" to start.`, 'info');
+    }
+  } catch (err) {
+    console.warn("rehydrateCloudState error:", err);
+  }
+}
+
 // ========================================================
 // 10. Cloud Execution Dispatch Engine (GitHub Actions + Kaggle + HF)
 // ========================================================
@@ -848,54 +971,61 @@ async function pollKaggleStatus() {
     if (hfRes.ok) {
       const hfData = await hfRes.json();
 
-      // Check if Hugging Face data belongs to the currently active job
-      const isCurrentJob = hfData.jobId === currentJobId;
+      if (hfData) {
+        if (!currentJobId && hfData.jobId) {
+          currentJobId = hfData.jobId;
+          jobIdLabel.textContent = `Job: ${currentJobId}`;
+        }
 
-      if (isCurrentJob) {
-        if (hfData.progress) {
-          progressFill.style.width = hfData.progress;
-          progressPct.textContent = hfData.progress;
+        const isCurrentJob = !currentJobId || hfData.jobId === currentJobId;
+
+        if (isCurrentJob) {
+          if (hfData.progress) {
+            progressFill.style.width = hfData.progress;
+            progressPct.textContent = hfData.progress;
+          }
+          if (hfData.milestone && hfData.milestone !== milestoneText.textContent) {
+            milestoneText.textContent = hfData.milestone;
+            appendLog(`[MILESTONE] ${hfData.milestone}`, 'info');
+          }
+          if (hfData.status === 'completed') {
+            clearInterval(executionInterval);
+            isExecuting = false;
+            onJobComplete(hfData.assetUrl || targetVoiceUrl);
+            return;
+          } else if (hfData.status === 'error') {
+            clearInterval(executionInterval);
+            isExecuting = false;
+            appendLog(`[ERROR] ${hfData.milestone || 'Execution error reported by cloud monitor.'}`, 'error');
+            cancelBtn.classList.add('hidden');
+            runBtn.classList.remove('hidden');
+            runBtn.disabled = false;
+            saveJobToHistory({
+              id: currentJobId || `job_${Date.now()}`,
+              tier: isPremiumStudio ? 'premium' : 'standard',
+              isPremium: isPremiumStudio,
+              voice: selectedVoiceKey,
+              voiceLabel: voiceSelect.options[voiceSelect.selectedIndex].text,
+              scenes: scriptSentences.length || 180,
+              status: 'failed',
+              assetUrl: null,
+              timestamp: new Date().toLocaleString()
+            });
+            return;
+          }
+        } else {
+          const simPct = Math.min(10 + Math.floor(elapsedSec * 0.2), 35);
+          progressFill.style.width = `${simPct}%`;
+          progressPct.textContent = `${simPct}%`;
+          milestoneText.textContent = `Spinning up Kaggle T4 GPU worker in cloud queue (${elapsedSec}s elapsed)...`;
         }
-        if (hfData.milestone) {
-          milestoneText.textContent = hfData.milestone;
-        }
-        if (hfData.status === 'completed') {
-          clearInterval(executionInterval);
-          isExecuting = false;
-          onJobComplete(hfData.assetUrl || targetVoiceUrl);
-          return;
-        } else if (hfData.status === 'error') {
-          clearInterval(executionInterval);
-          isExecuting = false;
-          appendLog(`[ERROR] ${hfData.milestone || 'Execution error reported by cloud monitor.'}`, 'error');
-          cancelBtn.classList.add('hidden');
-          runBtn.classList.remove('hidden');
-          runBtn.disabled = false;
-          saveJobToHistory({
-            id: currentJobId || `job_${Date.now()}`,
-            tier: isPremiumStudio ? 'premium' : 'standard',
-            isPremium: isPremiumStudio,
-            voice: selectedVoiceKey,
-            voiceLabel: voiceSelect.options[voiceSelect.selectedIndex].text,
-            scenes: scriptSentences.length || 4,
-            status: 'failed',
-            assetUrl: null,
-            timestamp: new Date().toLocaleString()
-          });
-          return;
-        }
-      } else {
-        // Job is still initializing / waiting in Kaggle queue
-        const simPct = Math.min(10 + Math.floor(elapsedSec * 0.2), 35);
-        progressFill.style.width = `${simPct}%`;
-        progressPct.textContent = `${simPct}%`;
-        milestoneText.textContent = `Spinning up Kaggle T4 GPU worker in cloud queue (${elapsedSec}s elapsed)...`;
       }
     }
 
     // 2. Query GitHub Actions cloud run status
     const runsRes = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/runs?per_page=1`, {
-      headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+      headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' },
+      cache: "no-store"
     });
     if (runsRes.ok) {
       const runsData = await runsRes.json();
@@ -917,7 +1047,6 @@ async function pollKaggleStatus() {
             onJobComplete(targetVoiceUrl);
             return;
           } else if (conclusion === 'failure') {
-            // Only terminate if we've been running for at least 120s or received error
             if (elapsedSec > 120) {
               clearInterval(executionInterval);
               isExecuting = false;
@@ -1367,13 +1496,14 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ========================================================
-// 14. Initial Application Load
+// 14. Initial Application Load & Cloud State Rehydration
 // ========================================================
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   initCharRefState();
   setStudioMode(isPremiumStudio);
   updateSettingsStatus();
-  restoreActiveExecutionState();
   updateHistoryBadge();
   renderHistoryTable();
+  restoreActiveExecutionState();
+  await rehydrateCloudState();
 });
