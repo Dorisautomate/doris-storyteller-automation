@@ -12,10 +12,14 @@ The unified, 100% autonomous channel production skill specifically configured fo
 > ### Strict Process Adherence & Zero Improvisation Mandate
 > Once triggered, this skill **MUST NOT STOP, PAUSE, OR IMPROVISE**.
 > - **NEVER IMPROVISE OR BYPASS ANY STAGE**: The agent **MUST** follow every step of this pipeline literally and strictly.
-> - **NO IMAGE RECYCLING**: Never reuse or copy images from previous runs or older project folders. Every single video requires fresh scene frames batch-generated through Google Flow (`https://flow.google.com/shared/tool/ee8f4722-38cb-4363-967f-057725e7c3c6`). Whether the video requires 15, 17, or 180+ images, only Google Flow has the required speed and style consistency.
-> - **ACTIVE BROWSER SESSION & PERMISSION PROTOCOL (Chrome or Edge)**: Google Flow must run inside the user's active, signed-in browser session (Microsoft Edge or Google Chrome) via remote debugging (`localhost:9222`) to access their authenticated account and tool configuration. If port 9222 is not reachable or if the browser displays an approval prompt, the agent must prompt the user once to grant permission / click "Allow" on their open browser window (or launch via the desktop automation shortcut), then continue without further pause.
-> - **KAGGLE GPU PIPELINE**: Audio synthesis and video rendering must execute via the Kaggle T4 GPU worker container (`doris-storyteller-worker`) and the cloud orchestrator.
-> - **STRICT DURATION CALIBRATION**: If a 1-minute video is requested, the script must be a full 60 seconds (150–240 words, 14–16 sentences), never an abbreviated 20-second clip.
+> - **CANONICAL CHARACTER MODEL SHEET**: Every Flow generation must use the official channel host character model sheet located at:
+>   `C:\Users\doris\Downloads\Doris Automation\assets\doris_character_reference_sheet.png` (mirror at `C:\Users\doris\Downloads\doris_character_reference_sheet.png`).
+>   Never generate without uploading this exact reference sheet into the Flow project.
+> - **RICH ENVIRONMENTAL PROMPTS (NO BLANK BACKGROUNDS)**: Characters must NEVER be isolated on a plain white background. Every prompt must describe the character, the specific action, and a rich, detailed environment corresponding directly to what is happening in the sentence narrative (e.g. corporate glass conference room, rainy evening car interior, psychology consultation office, university lecture hall, illuminated neuroscience lab).
+> - **BROWSER AGENT EXECUTION (NO HARDCODED TIMEOUT SCRIPTS)**: Google Flow generation must be driven by an active **Browser Agent** inspecting the UI visually, uploading the character reference sheet, monitoring scene cards, and actively clicking the **Retry** button on any failed scene until 100% of rows are green. Never use a blind script with a premature timeout (e.g., 20-minute limit on a 170-scene video).
+> - **NO IMAGE RECYCLING**: Never reuse or copy images from previous runs or older project folders. Every single video requires fresh scene frames batch-generated through Google Flow.
+> - **100% CLOUD VIDEO COMPILATION ON WEB APP (NEVER LOCAL FFMPEG STITCHING)**: Assembly and rendering must be automated on `https://dorisautomate.web.app` using the Kaggle T4 GPU worker container and cloud orchestrator. Never stitch images locally on the desktop with FFmpeg demuxer.
+> - **STRICT DURATION CALIBRATION**: If a 1-minute video is requested, the script must be a full 60 seconds (150–240 words, 14–16 sentences). If a 15-minute video is requested, the script must be 2,400–3,100 words (160–190 sentences).
 > - The agent **must autonomously execute all 5 phases sequentially in one continuous run**, auto-resolving any minor hurdles, and only concluding when the finalized, synchronized 1080p master video is delivered.
 
 ```mermaid
@@ -96,10 +100,11 @@ Execute the full long-form psychology script adhering strictly to the **PSY-Ladd
 
 2. **Sentence-by-Sentence CSV Export**:
    - Deconstruct every single sentence into a CSV row with exact capitalized columns: `SN,SCRIPT,PROMPT`.
-   - **Prompt Formula**:
-     > `[Subject action with original character + props/infographics], 2D adult animated sitcom aesthetic, bold thick black outlines, flat solid colors, plain solid white background`
-   - **Character Anchor**: Always reference `A cartoon man with glasses in a navy sweater over a white collared shirt`.
-   - **Policy Guardrails**: No copyrighted show names (use *"2D adult animated sitcom aesthetic"*), no self-harm/despair tropes, no dark car interiors at night, no violent or damage words.
+   - **Rich Environmental Prompt Formula (NO Blank White Backgrounds)**:
+     > `[Subject action with original character + props/infographics], in [rich, specific environment matching the sentence narrative e.g. glass conference room with long table, psychology consultation office with full bookshelves and armchair, rainy evening car interior with glowing dashboard dials, university lecture hall, illuminated neuroscience lab with brain diagram], 2D adult animated sitcom aesthetic, bold thick black outlines, flat solid vibrant colors, detailed atmospheric environment`
+   - **Character Anchor**: Always reference `A cartoon man with glasses in a navy sweater over a white collared shirt` (host Daniel).
+   - **Environment Requirement**: Every prompt must vividly describe the setting of the scene. Never produce blank, plain white backgrounds or characters floating in void.
+   - **Policy Guardrails**: No copyrighted show names (use *"2D adult animated sitcom aesthetic"*), no self-harm/despair triggers, no violent or damage words. Use constructive visual metaphors.
 
 3. **1-Sentence-Per-Line TXT Export**:
    - Save a companion `.txt` file where line $N$ matches row $N$ of the CSV verbatim.
@@ -108,30 +113,36 @@ Execute the full long-form psychology script adhering strictly to the **PSY-Ladd
 
 ---
 
-### Phase 3: Google Flow Scene Generation
+### Phase 3: Google Flow Scene Generation (Browser Agent Driven)
 
-Batch-generate all visual frames using the user's authenticated Google Chrome session:
+Batch-generate all visual frames using an interactive **Browser Agent** connected to the user's authenticated Google Chrome session:
 
 1. **Connect & Navigate**:
    - Attach browser agent to active Chrome (`localhost:9222`).
    - Navigate to Google Flow: `https://flow.google.com/shared/tool/ee8f4722-38cb-4363-967f-057725e7c3c6`.
    - Switch context to the tool iframe.
-2. **Configure Generation Parameters**:
+2. **Upload Character Model Sheet Reference**:
+   - Every Flow session must attach the official channel character reference sheet:
+     `C:\Users\doris\Downloads\Doris Automation\assets\doris_character_reference_sheet.png` (mirror: `C:\Users\doris\Downloads\doris_character_reference_sheet.png`).
+   - This anchors character anatomy, clothing, and vector style across all 16:9 frames.
+3. **Configure Generation Parameters**:
    - Upload the generated CSV from `C:\Users\doris\Downloads\<Title_Slug>.csv`.
-   - Select Model: **`🍌 Nano Banana 2 Lite`** (high throughput ~2-3s per scene, crisp vector outlines).
+   - Select Model: **`🍌 Nano Banana 2 Lite`** (high throughput, crisp vector outlines).
    - Set Aspect Ratio: **`16:9`** (landscape standard).
-   - Upload Host Character Reference: `my_character_reference.png`.
-3. **Execute Batch Generation**:
-   - Click **"Generate All"** and monitor batch progress until 100% complete.
-   - If an individual prompt triggers a safety filter, auto-rephrase the prompt in-memory with softened tokens and retry without stopping.
-4. **In-Memory DOM Image Extraction (Zero Download Errors)**:
+4. **Execute Batch Generation & Interactive Monitoring**:
+   - Click **"Run Batch"** / **"Generate All"**.
+   - **No Hardcoded Timeout Scripts**: For a 15-minute video (160–190 scenes), batch generation requires ~40–50 minutes. The browser agent must monitor the batch cards interactively or schedule checkups. Never abort with a premature 20-minute timeout.
+   - **Active Retry Protocol on Failed Cards**: The browser agent must visually inspect the scene cards. If any card shows a failed state or retry icon, the agent must actively click the **Retry** button for that specific scene until every single card is completed and green.
+5. **Exact 1:1 In-Memory DOM Image Extraction (Zero Index Shift)**:
    > [!IMPORTANT]
    > Do **NOT** use browser bulk downloads (triggers Windows AES / Chrome "Virus scan failed" file lock errors).
+   - Filter out the style reference thumbnail and UI assets so that Scene 1 matches row 1 exactly (no off-by-one shifting).
    - Extract image base64 payloads directly from the DOM using DevTools evaluation:
      ```javascript
      (() => {
+       // Filter out reference image and style picker assets
        const imgs = Array.from(document.querySelectorAll('img'))
-         .filter(img => img.alt !== 'Style Ref' && img.src.startsWith('data:image'));
+         .filter(img => img.alt !== 'Style Ref' && !img.src.includes('character_reference') && (img.src.startsWith('data:image') || img.src.startsWith('blob:') || img.src.startsWith('http')));
        return imgs.map((img, idx) => ({ sn: idx + 1, src: img.src }));
      })();
      ```
@@ -139,13 +150,16 @@ Batch-generate all visual frames using the user's authenticated Google Chrome se
    - Apply strict sequential naming:
      $$\mathbf{<SN>.\ <Sentence>.jpg}$$
      *(e.g., `1. It is Thursday night, and you are sitting in your car with the headlights off.jpg`)*.
+   - Verify every single file has a unique hash (zero duplicate placeholder images).
    - **Immediately transition to Phase 4 without pausing**.
 
 ---
 
 ### Phase 4: Web App Automation (`dorisautomate.web.app`)
 
-Automate the video compilation directly on the live production web app:
+> [!CRITICAL]
+> **100% Cloud Web App Assembly Only**:
+> Never stitch images locally with FFmpeg on the desktop! The compilation and rendering MUST happen through the live production web app: `https://dorisautomate.web.app`.
 
 1. **Navigate**:
    - Open **`https://dorisautomate.web.app`** in the active Chrome session.
@@ -162,8 +176,9 @@ Automate the video compilation directly on the live production web app:
    - Inspect `#alignmentBadge`. Verify it displays:
      `🟢 Aligned: N Images ↔ N Sentences`
    - Ensure `#runBtn` is enabled.
-6. **Step 5 — Trigger Execution & Real-Time Tracking**:
+6. **Step 5 — Trigger Execution & Real-Time Cloud Tracking**:
    - Click `#runBtn` ("Run Video Automation").
+   - Monitor the cloud execution logs and progress bar in real time until Kaggle GPU finishes rendering and Hugging Face publishes the 1080p MP4.
    - Monitor the execution logs and progress bar in real time:
      - `[CLOUD] 100% Cloud Architecture engaged`
      - `[GITHUB] Dispatching cloud workflow runner on GitHub Actions`
