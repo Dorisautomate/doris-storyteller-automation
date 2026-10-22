@@ -216,7 +216,14 @@ if IS_PREMIUM:
     }
 
     total_scenes = len(script_items)
-    for idx, item in enumerate(script_items):
+    image_files = [None] * total_scenes
+    completed_scenes = 0
+    completed_lock = threading.Lock()
+
+    import concurrent.futures
+
+    def process_premium_scene(idx, item):
+        nonlocal completed_scenes
         sn = item.get("sn", idx + 1)
         sentence = item.get("sentence", "")
         prompt = item.get("prompt", "")
@@ -224,14 +231,6 @@ if IS_PREMIUM:
         out_filename = f"{sn}. {clean_sentence}.jpg"
         out_path = os.path.join("work_dir/images", out_filename)
 
-        pct = 20 + int(idx * (15 / total_scenes))
-        update_status(pct, f"💎 [PREMIUM] Generating scene {sn}/{total_scenes} via Kie.ai NanoBanana 2 Lite...")
-        print(f"\n[Kie.ai] Submitting Task {sn}/{total_scenes}: '{sentence[:60]}...'")
-
-        task_id = None
-        create_url = "https://api.kie.ai/api/v1/jobs/createTask"
-        
-        # Prepend character consistency prompt anchor if not explicitly referenced
         final_prompt = prompt
         if CHARACTER_REF_URL and "cartoon man" not in prompt.lower() and "daniel" not in prompt.lower():
             final_prompt = f"Using the exact same character features and 2D style from the character reference sheet: {prompt}"
@@ -247,17 +246,19 @@ if IS_PREMIUM:
             }
         }
 
+        task_id = None
+        create_url = "https://api.kie.ai/api/v1/jobs/createTask"
         try:
             if KIE_API_KEY:
                 r = requests.post(create_url, json=payload, headers=headers, timeout=20)
                 if r.status_code == 200:
                     resp_json = r.json()
                     task_id = resp_json.get("taskId") or (resp_json.get("data") and resp_json.get("data").get("taskId"))
-                    print(f"[Kie.ai] Task ID created: {task_id}")
+                    print(f"[Kie.ai Scene {sn}] Task ID: {task_id}")
                 else:
-                    print(f"[Kie.ai Error] createTask failed ({r.status_code}): {r.text}")
+                    print(f"[Kie.ai Error Scene {sn}] createTask failed ({r.status_code}): {r.text}")
         except Exception as api_err:
-            print(f"[Kie.ai Notice] API call error: {api_err}")
+            print(f"[Kie.ai Notice Scene {sn}] API error: {api_err}")
 
         saved_ok = False
         if task_id:
@@ -288,20 +289,18 @@ if IS_PREMIUM:
                             res_url = d.get("resultUrl") or d.get("outputUrl") or info_data.get("resultUrl")
 
                         if (state == "success" or success_flag == 1 or d.get("status") == 1) and res_url:
-                            print(f"[Kie.ai] Scene {sn} generated successfully in {(poll_attempt+1)*3}s. Downloading: {res_url}")
                             img_resp = requests.get(res_url, timeout=30)
                             if img_resp.status_code == 200:
                                 with open(out_path, "wb") as f_img:
                                     f_img.write(img_resp.content)
-                                print(f"[Kie.ai] Successfully saved: {out_path} ({os.path.getsize(out_path)} bytes)")
-                                image_files.append(out_path)
+                                print(f"[Kie.ai] Scene {sn} saved ({os.path.getsize(out_path)} bytes)")
                                 saved_ok = True
                                 break
                         elif state == "fail" or d.get("failCode") or d.get("status") in (2, 3):
-                            print(f"[Kie.ai Warning] Task failed: {d.get('failMsg') or d.get('errorMessage')}")
+                            print(f"[Kie.ai Warning Scene {sn}] Task failed: {d.get('failMsg') or d.get('errorMessage')}")
                             break
                 except Exception as poll_err:
-                    print(f"[Kie.ai Poll Notice] {poll_err}")
+                    pass
 
         if not saved_ok:
             try:
@@ -311,8 +310,20 @@ if IS_PREMIUM:
             except Exception:
                 with open(out_path, "wb") as f_fb:
                     f_fb.write(b"")
-            image_files.append(out_path)
-            print(f"[Scene {sn}] Staged scene image: {out_path}")
+            print(f"[Scene {sn}] Staged fallback scene image: {out_path}")
+
+        image_files[idx] = out_path
+        with completed_lock:
+            completed_scenes += 1
+            pct = 20 + int(completed_scenes * (15 / total_scenes))
+            update_status(pct, f"💎 [PREMIUM] Completed scene {completed_scenes}/{total_scenes} via Kie.ai NanoBanana 2 Lite...")
+
+    print(f"\n>>> Dispatching {total_scenes} scenes across 4 concurrent worker threads...")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(process_premium_scene, idx, item) for idx, item in enumerate(script_items)]
+        concurrent.futures.wait(futures)
+
+    print(f"\n>>> [Kie.ai] All {total_scenes} scenes dynamically generated and staged.")
 
     script_sentences = [it["sentence"] for it in script_items]
 

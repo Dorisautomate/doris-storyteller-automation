@@ -50,7 +50,7 @@ def main():
     api.authenticate()
 
     last_state = "QUEUED"
-    for i in range(180): # Poll up to 30 minutes to tolerate Kaggle GPU queue times
+    for i in range(540): # Poll up to 90 minutes to tolerate full 15-minute generation and Kaggle GPU queue times
         time.sleep(10)
         try:
             status_obj = api.kernels_status(KERNEL_SLUG)
