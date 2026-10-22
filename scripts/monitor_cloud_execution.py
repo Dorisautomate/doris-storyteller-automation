@@ -21,7 +21,7 @@ def update_hf_job_status(progress_pct, milestone_text, status="running", asset_u
         return
     api = HfApi(token=HF_TOKEN)
     data = {
-        "jobId": f"cloud_job_{int(time.time())}",
+        "jobId": os.environ.get("JOB_ID") or f"cloud_job_{int(time.time())}",
         "progress": f"{progress_pct}%",
         "milestone": milestone_text,
         "status": status,

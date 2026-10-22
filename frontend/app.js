@@ -833,46 +833,59 @@ async function triggerKaggleExecution(params = {}) {
   }
 }
 
+let jobStartTime = 0;
+
 async function pollKaggleStatus() {
   try {
     const selectedVoiceKey = voiceSelect.value || 'hope_professional';
     const targetVoiceUrl = VOICE_VIDEO_MAP[selectedVoiceKey] || DEFAULT_VIDEO_URL;
+    const elapsedSec = Math.floor((Date.now() - jobStartTime) / 1000);
 
     // 1. Check Hugging Face live status
     const hfRes = await fetch(`https://huggingface.co/datasets/${HF_DATASET_REPO}/raw/main/jobs/latest_job.json?t=${Date.now()}`, { cache: "no-store" });
     if (hfRes.ok) {
       const hfData = await hfRes.json();
-      if (hfData.progress) {
-        progressFill.style.width = hfData.progress;
-        progressPct.textContent = hfData.progress;
-      }
-      if (hfData.milestone) {
-        milestoneText.textContent = hfData.milestone;
-      }
-      if (hfData.status === 'completed') {
-        clearInterval(executionInterval);
-        isExecuting = false;
-        onJobComplete(hfData.assetUrl || targetVoiceUrl);
-        return;
-      } else if (hfData.status === 'error') {
-        clearInterval(executionInterval);
-        isExecuting = false;
-        appendLog(`[ERROR] ${hfData.milestone || 'Execution error reported by cloud monitor.'}`, 'error');
-        cancelBtn.classList.add('hidden');
-        runBtn.classList.remove('hidden');
-        runBtn.disabled = false;
-        saveJobToHistory({
-          id: currentJobId || `job_${Date.now()}`,
-          tier: isPremiumStudio ? 'premium' : 'standard',
-          isPremium: isPremiumStudio,
-          voice: selectedVoiceKey,
-          voiceLabel: voiceSelect.options[voiceSelect.selectedIndex].text,
-          scenes: scriptSentences.length || 4,
-          status: 'failed',
-          assetUrl: null,
-          timestamp: new Date().toLocaleString()
-        });
-        return;
+
+      // Guard: Ignore stale previous job results during the initial 60 seconds
+      const isCurrentJob = hfData.jobId === currentJobId;
+      if (!isCurrentJob && elapsedSec < 60) {
+        const simPct = Math.min(10 + Math.floor(elapsedSec * 0.5), 35);
+        progressFill.style.width = `${simPct}%`;
+        progressPct.textContent = `${simPct}%`;
+        milestoneText.textContent = `Spinning up Kaggle T4 GPU worker in the cloud (${elapsedSec}s elapsed)...`;
+      } else {
+        if (hfData.progress) {
+          progressFill.style.width = hfData.progress;
+          progressPct.textContent = hfData.progress;
+        }
+        if (hfData.milestone) {
+          milestoneText.textContent = hfData.milestone;
+        }
+        if (hfData.status === 'completed') {
+          clearInterval(executionInterval);
+          isExecuting = false;
+          onJobComplete(hfData.assetUrl || targetVoiceUrl);
+          return;
+        } else if (hfData.status === 'error' && (isCurrentJob || elapsedSec >= 60)) {
+          clearInterval(executionInterval);
+          isExecuting = false;
+          appendLog(`[ERROR] ${hfData.milestone || 'Execution error reported by cloud monitor.'}`, 'error');
+          cancelBtn.classList.add('hidden');
+          runBtn.classList.remove('hidden');
+          runBtn.disabled = false;
+          saveJobToHistory({
+            id: currentJobId || `job_${Date.now()}`,
+            tier: isPremiumStudio ? 'premium' : 'standard',
+            isPremium: isPremiumStudio,
+            voice: selectedVoiceKey,
+            voiceLabel: voiceSelect.options[voiceSelect.selectedIndex].text,
+            scenes: scriptSentences.length || 4,
+            status: 'failed',
+            assetUrl: null,
+            timestamp: new Date().toLocaleString()
+          });
+          return;
+        }
       }
     }
 
@@ -927,6 +940,7 @@ runBtn.addEventListener('click', async () => {
 
   isExecuting = true;
   currentJobId = "epic_job_" + Date.now();
+  jobStartTime = Date.now();
   executionLogs = [];
 
   runBtn.classList.add('hidden');
