@@ -210,6 +210,52 @@ if IS_PREMIUM:
             {"sn": 4, "sentence": "Your brain is not broken; it is simply trapped in a survival loop that nobody taught you how to reset.", "prompt": "A cartoon man with glasses in a navy sweater over a white collared shirt standing composed in a warm contemporary psychology library with bookshelves, 2D adult animated sitcom aesthetic, bold thick black outlines, flat solid vibrant colors, detailed atmospheric environment"}
         ]
 
+    # ── CHECKPOINT RESUME: Detect already-generated scene images on HF ──
+    existing_scene_nums = set()
+    try:
+        from huggingface_hub import HfApi, list_repo_files
+        hf_checkpoint_api = HfApi(token=HF_TOKEN)
+        repo_files = list(hf_checkpoint_api.list_repo_files(repo_id=HF_DATASET_REPO, repo_type="dataset"))
+        for f in repo_files:
+            if f.startswith("scenes/latest/") and f.endswith(".jpg"):
+                try:
+                    scene_num = int(f.split("/")[-1].replace(".jpg", ""))
+                    existing_scene_nums.add(scene_num)
+                except ValueError:
+                    pass
+        if existing_scene_nums:
+            print(f"[CHECKPOINT RESUME] Found {len(existing_scene_nums)} existing scene images on HuggingFace — will skip those!")
+            print(f"[CHECKPOINT RESUME] Existing scenes: {sorted(existing_scene_nums)[:20]}{'...' if len(existing_scene_nums) > 20 else ''}")
+            update_status(20, f"💎 [RESUME] Resuming from checkpoint — {len(existing_scene_nums)}/{len(script_items)} scenes already generated, skipping...")
+        else:
+            print("[CHECKPOINT] No existing checkpoint found — fresh generation run.")
+    except Exception as ckpt_err:
+        print(f"[CHECKPOINT Notice] Could not check for existing images: {ckpt_err}")
+
+    # Download existing checkpoint images to local work_dir
+    for sn_num in existing_scene_nums:
+        try:
+            dl_path = hf_hub_download(
+                repo_id=HF_DATASET_REPO,
+                filename=f"scenes/latest/{sn_num}.jpg",
+                repo_type="dataset",
+                token=HF_TOKEN,
+                local_dir="work_dir"
+            )
+            # Find matching script item to get the correct output filename
+            for item in script_items:
+                if str(item["sn"]) == str(sn_num):
+                    clean_s = re.sub(r'[:/\\*?"<>|]', '-', item["sentence"]).strip()
+                    dest = os.path.join("work_dir/images", f"{sn_num}. {clean_s}.jpg")
+                    import shutil
+                    shutil.copyfile(dl_path, dest)
+                    break
+        except Exception:
+            existing_scene_nums.discard(sn_num)
+
+    print(f"[CHECKPOINT] {len(existing_scene_nums)} checkpoint images restored to work_dir/images/")
+    # ── END CHECKPOINT RESUME ──
+
     headers = {
         "Authorization": f"Bearer {KIE_API_KEY}",
         "Content-Type": "application/json"
@@ -219,6 +265,7 @@ if IS_PREMIUM:
     image_files = [None] * total_scenes
     completed_scenes = 0
     completed_lock = threading.Lock()
+    hf_upload_lock = threading.Lock()
 
     import concurrent.futures
 
@@ -230,6 +277,17 @@ if IS_PREMIUM:
         clean_sentence = re.sub(r'[:/\\*?"<>|]', '-', sentence).strip()
         out_filename = f"{sn}. {clean_sentence}.jpg"
         out_path = os.path.join("work_dir/images", out_filename)
+
+        # ── CHECKPOINT SKIP: If this scene was already generated, skip Kie.ai call ──
+        if int(sn) in existing_scene_nums and os.path.exists(out_path) and os.path.getsize(out_path) > 1000:
+            print(f"[CHECKPOINT SKIP] Scene {sn} already exists ({os.path.getsize(out_path)} bytes) — skipping Kie.ai generation")
+            image_files[idx] = out_path
+            with completed_lock:
+                completed_scenes += 1
+                pct = 20 + int(completed_scenes * (15 / total_scenes))
+                update_status(pct, f"💎 [RESUME] Restored scene {completed_scenes}/{total_scenes} from checkpoint...")
+            return
+        # ── END CHECKPOINT SKIP ──
 
         final_prompt = prompt
         if CHARACTER_REF_URL and "cartoon man" not in prompt.lower() and "daniel" not in prompt.lower():
@@ -263,10 +321,10 @@ if IS_PREMIUM:
         saved_ok = False
         if task_id:
             info_url = f"https://api.kie.ai/api/v1/jobs/recordInfo?taskId={task_id}"
-            for poll_attempt in range(40):
-                time.sleep(3)
+            for poll_attempt in range(20):
+                time.sleep(4)
                 try:
-                    info_res = requests.get(info_url, headers=headers, timeout=15)
+                    info_res = requests.get(info_url, headers=headers, timeout=10)
                     if info_res.status_code == 200:
                         info_data = info_res.json()
                         d = info_data.get("data", {})
@@ -289,18 +347,35 @@ if IS_PREMIUM:
                             res_url = d.get("resultUrl") or d.get("outputUrl") or info_data.get("resultUrl")
 
                         if (state == "success" or success_flag == 1 or d.get("status") == 1) and res_url:
-                            img_resp = requests.get(res_url, timeout=30)
+                            img_resp = requests.get(res_url, timeout=20)
                             if img_resp.status_code == 200:
                                 with open(out_path, "wb") as f_img:
                                     f_img.write(img_resp.content)
                                 print(f"[Kie.ai] Scene {sn} saved ({os.path.getsize(out_path)} bytes)")
+                                # ── CHECKPOINT SAVE: Upload to HF immediately ──
+                                try:
+                                    with hf_upload_lock:
+                                        from huggingface_hub import HfApi
+                                        _hf = HfApi(token=HF_TOKEN)
+                                        _hf.upload_file(
+                                            path_or_fileobj=out_path,
+                                            path_in_repo=f"scenes/latest/{sn}.jpg",
+                                            repo_id=HF_DATASET_REPO,
+                                            repo_type="dataset"
+                                        )
+                                        print(f"[CHECKPOINT] Scene {sn} saved to HuggingFace checkpoint")
+                                except Exception as hf_err:
+                                    print(f"[CHECKPOINT Warning] Scene {sn} HF upload failed: {hf_err}")
+                                # ── END CHECKPOINT SAVE ──
                                 saved_ok = True
                                 break
                         elif state == "fail" or d.get("failCode") or d.get("status") in (2, 3):
                             print(f"[Kie.ai Warning Scene {sn}] Task failed: {d.get('failMsg') or d.get('errorMessage')}")
                             break
+                except requests.exceptions.Timeout:
+                    print(f"[Kie.ai Scene {sn}] Poll timeout on attempt {poll_attempt+1}/20, retrying...")
                 except Exception as poll_err:
-                    pass
+                    print(f"[Kie.ai Scene {sn}] Poll error: {poll_err}")
 
         if not saved_ok:
             try:

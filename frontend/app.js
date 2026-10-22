@@ -156,6 +156,11 @@ const progressFill = document.getElementById('progressFill');
 const progressPct = document.getElementById('progressPct');
 const milestoneText = document.getElementById('milestoneText');
 const logConsole = document.getElementById('logConsole');
+
+// Stall detection & Resume
+let lastMilestoneValue = '';
+let lastMilestoneChangeTime = Date.now();
+const STALL_THRESHOLD_MS = 180000; // 3 minutes with no milestone update = stall
 const videoCard = document.getElementById('videoCard');
 const videoPlayer = document.getElementById('videoPlayer');
 const downloadBtn = document.getElementById('downloadBtn');
@@ -902,7 +907,9 @@ async function rehydrateCloudState() {
       logConsole.innerHTML = '';
       appendLog(`[CLOUD STATUS] Previous Job: ${hfData.jobId}`, 'warning');
       appendLog(`[ERROR] ${hfData.milestone || 'Cloud error'}`, 'error');
-      appendLog(`[READY] All ${scriptSentences.length || 180} scenes are loaded and ready in Studio. Click "Run Video Automation" to start.`, 'info');
+      appendLog(`[READY] All ${scriptSentences.length || 180} scenes are loaded and ready in Studio.`, 'info');
+      showResumeButton();
+      appendLog(`[RESUME] Click "Resume from Checkpoint" to continue from saved scenes, or click "Run Video Automation" to restart.`, 'info');
     }
   } catch (err) {
     console.warn("rehydrateCloudState error:", err);
@@ -962,6 +969,68 @@ async function triggerKaggleExecution(params = {}) {
 
 let jobStartTime = 0;
 
+// ── Resume from Checkpoint ──
+function showResumeButton() {
+  // Don't duplicate
+  if (document.getElementById('resumeBtn')) return;
+
+  const btn = document.createElement('button');
+  btn.id = 'resumeBtn';
+  btn.className = 'action-btn';
+  btn.style.cssText = 'background: linear-gradient(135deg, #f59e0b, #d97706); margin-left: 8px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;';
+  btn.innerHTML = '⟳ Resume from Checkpoint';
+  btn.addEventListener('click', handleResume);
+
+  // Insert next to cancel button
+  cancelBtn.parentElement.insertBefore(btn, cancelBtn.nextSibling);
+  appendLog(`[STALL DETECTED] Generation appears stalled — click "Resume from Checkpoint" to continue from where it stopped.`, 'warning');
+}
+
+function hideResumeButton() {
+  const btn = document.getElementById('resumeBtn');
+  if (btn) btn.remove();
+}
+
+async function handleResume() {
+  const resumeBtn = document.getElementById('resumeBtn');
+  if (resumeBtn) {
+    resumeBtn.disabled = true;
+    resumeBtn.innerHTML = '⏳ Resuming...';
+  }
+
+  appendLog(`[RESUME] Triggering checkpoint resume — previously generated scenes will be skipped automatically.`, 'info');
+
+  // Stop current poller
+  if (executionInterval) clearInterval(executionInterval);
+
+  // Reset stall tracker
+  lastMilestoneChangeTime = Date.now();
+  lastMilestoneValue = '';
+
+  // Re-dispatch the pipeline (Kaggle will detect existing images on HF and skip them)
+  currentJobId = "epic_job_" + Date.now();
+  jobStartTime = Date.now();
+  jobIdLabel.textContent = `Job: ${currentJobId} (Resume)`;
+  progressFill.style.backgroundColor = '';
+  progressFill.style.width = '10%';
+  progressPct.textContent = '10%';
+  milestoneText.textContent = 'Resuming from checkpoint — skipping already-generated scenes...';
+
+  hideResumeButton();
+  runBtn.classList.add('hidden');
+  cancelBtn.classList.remove('hidden');
+
+  if (isPremiumStudio && csvPrompts.length > 0) {
+    const csvData = "SN,SCRIPT,PROMPT\n" + csvPrompts.map(r => `${r.sn},"${(r.sentence||'').replace(/"/g, '""')}","${(r.prompt||'').replace(/"/g, '""')}"`).join('\n');
+    await syncScriptToHuggingFace(csvData);
+  }
+
+  await triggerKaggleExecution({ isPremium: isPremiumStudio });
+  executionInterval = setInterval(pollKaggleStatus, 4000);
+  saveActiveExecutionState({ status: 'running' });
+}
+// ── End Resume from Checkpoint ──
+
 async function pollKaggleStatus() {
   try {
     const selectedVoiceKey = voiceSelect.value || 'hope_professional';
@@ -989,15 +1058,27 @@ async function pollKaggleStatus() {
           if (hfData.milestone && hfData.milestone !== milestoneText.textContent) {
             milestoneText.textContent = hfData.milestone;
             appendLog(`[MILESTONE] ${hfData.milestone}`, 'info');
+            // Reset stall tracker on any milestone change
+            lastMilestoneValue = hfData.milestone;
+            lastMilestoneChangeTime = Date.now();
+            hideResumeButton();
           }
+
+          // ── STALL DETECTION: Show Resume button if no update for 3 minutes ──
+          if (hfData.status === 'running' && (Date.now() - lastMilestoneChangeTime) > STALL_THRESHOLD_MS) {
+            showResumeButton();
+          }
+          // ── END STALL DETECTION ──
           if (hfData.status === 'completed') {
             clearInterval(executionInterval);
             isExecuting = false;
+            hideResumeButton();
             onJobComplete(hfData.assetUrl || targetVoiceUrl);
             return;
           } else if (hfData.status === 'error') {
             clearInterval(executionInterval);
             isExecuting = false;
+            hideResumeButton();
             appendLog(`[ERROR] ${hfData.milestone || 'Execution error reported by cloud monitor.'}`, 'error');
             cancelBtn.classList.add('hidden');
             runBtn.classList.remove('hidden');
