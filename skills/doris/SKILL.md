@@ -12,12 +12,12 @@ The unified, 100% autonomous channel production skill specifically configured fo
 > ### Strict Process Adherence & Zero Improvisation Mandate
 > Once triggered, this skill **MUST NOT STOP, PAUSE, OR IMPROVISE**.
 > - **NEVER IMPROVISE OR BYPASS ANY STAGE (UNLESS PREMIUM STUDIO IS SPECIFIED)**: The agent **MUST** follow every step of this pipeline literally and strictly.
-> - **💎 PREMIUM STUDIO BYPASS PROTOCOL (NO VEED.IO, NO GOOGLE FLOW)**:
->   If the user mentions **"premium account"**, **"premium studio"**, **"using my premium studio"**, or requests premium generation:
->   - **DO NOT** open Google Flow, **DO NOT** open Veed.io, and **DO NOT** generate or stitch images locally!
->   - **BYPASS PHASE 3 COMPLETELY**: Transition directly from Phase 2 (Scriptwriting & CSV generation) to **Phase 4 Mode B: 💎 Premium Studio directly on `https://dorisautomate.web.app`**.
->   - In Premium Studio, simply upload the CSV, verify the Character Reference Sheet is anchored, select the voice, and click **"Run Video Automation"**.
->   - Kaggle T4 GPU + Kie.ai NanoBanana 2 Lite dynamically generates every 1K 16:9 image line-by-line in the cloud, synthesizes F5-TTS audio, compiles the 1080p MP4, and delivers it automatically.
+> - **💎 PREMIUM MANDATE (HEADED BROWSER EXECUTION ONLY)**:
+>   When the user gives instructions mentioning **"Premium"**, **"premium account"**, or **"premium studio"**, the agent's task is strictly:
+>   1. **Channel Audit & Research**: Go to the channel (`@DrDorisPsych`), check what video is necessary and prevent duplicates, search the topic, and lock the winning outlier topic idea.
+>   2. **Prepare Script Deliverables**: Write the complete script (calibrated duration: 15 min = 2,400–3,100 words; 1 min = 150–240 words), export the CSV (`SN,SCRIPT,PROMPT` with character and environmental prompts) and TXT.
+>   3. **Headed Browser Execution**: Launch a **headed browser** (visible Chrome window), navigate to `https://dorisautomate.web.app`, switch to the **Premium section**, input/upload the CSV into the premium section, and click **Run Video Automation**.
+>   4. **Strict Scope Enforcement**: **You must not do anything else.** You are NOT expected to run any secondary scripts, local stitchers, or external tools. The website handles the complete cloud generation and assembly.
 > - **CANONICAL CHARACTER MODEL SHEET**: Every generation (Flow or Premium Studio) must use the official channel host character model sheet located at:
 >   `C:\Users\doris\Downloads\Doris Automation\assets\doris_character_reference_sheet.png` (mirror at `C:\Users\doris\Downloads\doris_character_reference_sheet.png` or HF URL: `https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/references/doris_character_reference_sheet.png`).
 >   Never generate without anchoring this exact reference sheet.
@@ -134,14 +134,11 @@ Immediately upon completing Phase 2 (Scriptwriting & Deliverables), the agent mu
 > **Check for Premium Studio Invocations**:
 > Does the prompt mention **"premium studio"**, **"premium account"**, **"using my premium studio"**, or **"premium"**?
 
-- **CASE 1: User Mentioned Premium Studio / Premium Account (FAST-TRACK BYPASS)**:
-  - **BYPASS GOOGLE FLOW & VEED.IO COMPLETELY**: Do **NOT** navigate to Google Flow, do **NOT** navigate to Veed.io, and do **NOT** generate or stitch images locally on the desktop!
-  - **SKIP PHASE 3**: Transition directly to **Phase 4 Mode B: 💎 Premium Studio on `https://dorisautomate.web.app`**.
-  - Upload the generated CSV file directly to the web app (`#csvFileInput`).
-  - Verify that the Character Reference Sheet is anchored (default host Daniel at `assets/doris_character_reference_sheet.png`).
-  - Select the voice model (Default: Hope — Professional).
-  - Click **"Run Video Automation"** (`#runBtn`).
-  - Kaggle T4 GPU + Kie.ai NanoBanana 2 Lite (1K 16:9) will dynamically generate all scene images in the cloud, synthesize F5-TTS audio, compile the 1080p MP4, and deliver it via Hugging Face.
+- **CASE 1: User Mentioned Premium / Premium Studio / Premium Account (HEADED BROWSER EXECUTION)**:
+  - **BYPASS GOOGLE FLOW & VEED.IO**: Do NOT go to Google Flow, do NOT go to Veed.io, and do NOT run local stitching scripts.
+  - **Create a Headed Browser**: Launch a headed browser window (visible Chrome session) and navigate directly to `https://dorisautomate.web.app`.
+  - **Input CSV into Premium Section**: Switch to the **Premium section**, upload the generated CSV (`#csvFileInput`), and click **Run Video Automation** (`#runBtn`).
+  - **Strict Scope Limit**: Do not do anything else. You are not expected to run secondary scripts. Let the website handle the cloud generation and compilation directly.
 
 - **CASE 2: Standard Request (No Premium Mention)**:
   - Proceed normally through **Phase 3: Google Flow Scene Generation** below, connecting via active Chrome (`localhost:9222`) to batch-generate images, download them to `C:\Users\doris\Downloads\<Title_Folder>`, and assemble them in Phase 4 Mode A.
@@ -281,4 +278,4 @@ The web app supports two operating studio modes accessible via the **Studio Mode
 4. **Enforce 1:1 Image-to-Sentence parity**: Every image must strictly correspond to its numbered script sentence.
 5. **Primary Compiler**: Always use `dorisautomate.web.app` as the primary live compiler.
 6. **Default Voice**: Default voice is always Hope Professional.
-7. **💎 Premium Studio Fast-Track Priority**: Whenever the user mentions "premium studio", "premium account", or "using my premium studio", **NEVER visit Google Flow or Veed.io**. Completely bypass Phase 3 and go directly to `https://dorisautomate.web.app` in 💎 Premium Studio mode. Upload the CSV and let the cloud Kaggle T4 GPU + Kie.ai NanoBanana 2 Lite pipeline generate all images and video automatically.
+7. **💎 Premium Mandate (Headed Browser Only)**: When instructed with "Premium", the agent's task is strictly: (1) Check channel & research topic, (2) Prepare script CSV & TXT, (3) Launch a headed browser, input CSV on the Premium section of `dorisautomate.web.app`, and click Run. Do not run secondary scripts or do anything else—let the website handle the cloud generation and compilation directly.
