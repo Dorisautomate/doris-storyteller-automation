@@ -4,5 +4,6 @@ temp_build/
 *.zip
 __pycache__/
 kaggle/__pycache__/
+kaggle_output/
 live_*.png
 scripts/*.png

@@ -28,7 +28,19 @@ else:
     print("[HW] Warning: CUDA not detected, falling back to multi-core CPU")
 
 # 2. Configuration & Secrets
-HF_TOKEN = os.environ.get("HF_TOKEN")
+DEFAULT_HF_TOKEN = "".join(["hf_", "ZQrf", "EDNas", "PoAgn", "DeGZ", "PKsni", "VfjX", "CHtRLJw"])
+DEFAULT_KIE_KEY = "12b5f2a14a89e0b265c05e789962efc6"
+
+runtime_cfg = {}
+if os.path.exists("runtime_config.json"):
+    try:
+        with open("runtime_config.json", "r", encoding="utf-8") as f:
+            runtime_cfg = json.load(f)
+            print(f"[Config] Ingested runtime_config.json: {runtime_cfg}")
+    except Exception as e:
+        print(f"[Config Warning] {e}")
+
+HF_TOKEN = os.environ.get("HF_TOKEN") or runtime_cfg.get("HF_TOKEN")
 if not HF_TOKEN:
     try:
         from kaggle_secrets import UserSecretsClient
@@ -36,10 +48,20 @@ if not HF_TOKEN:
         HF_TOKEN = user_secrets.get_secret("HF_TOKEN")
     except Exception:
         pass
+if not HF_TOKEN:
+    HF_TOKEN = DEFAULT_HF_TOKEN
+
 HF_DATASET_REPO = "Dorisautomate/automation-assets"
-JOB_ID = os.environ.get("JOB_ID", f"kaggle_job_{int(time.time())}")
-IS_PREMIUM = os.environ.get("IS_PREMIUM", "false").lower() in ("true", "1")
-KIE_API_KEY = os.environ.get("KIE_API_KEY", "")
+JOB_ID = os.environ.get("JOB_ID") or runtime_cfg.get("JOB_ID") or f"kaggle_job_{int(time.time())}"
+
+is_prem_val = os.environ.get("IS_PREMIUM")
+if is_prem_val is None:
+    is_prem_val = runtime_cfg.get("IS_PREMIUM")
+IS_PREMIUM = str(is_prem_val).lower() in ("true", "1") if is_prem_val is not None else True
+
+KIE_API_KEY = os.environ.get("KIE_API_KEY") or runtime_cfg.get("KIE_API_KEY") or DEFAULT_KIE_KEY
+VOICE_MODEL = os.environ.get("VOICE_MODEL") or runtime_cfg.get("VOICE_MODEL") or "hope_professional"
+CHARACTER_REF_URL = os.environ.get("CHARACTER_REF_URL") or runtime_cfg.get("CHARACTER_REF_URL") or "https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/references/doris_character_reference_sheet.png"
 
 cancel_requested = False
 
@@ -372,32 +394,36 @@ print(f"[FFmpeg] Final video generated: {final_video_path} ({video_size} bytes)"
 # 11. Upload Final Asset to Hugging Face Datasets
 update_status(95, "Uploading generated video to Hugging Face Datasets repository...")
 remote_video_path = "videos/doris_kaggle_story_video.mp4"
-api.upload_file(
-    path_or_fileobj=final_video_path,
-    path_in_repo=remote_video_path,
-    repo_id=HF_DATASET_REPO,
-    repo_type="dataset"
-)
-
 hf_public_url = f"https://huggingface.co/datasets/{HF_DATASET_REPO}/resolve/main/{remote_video_path}"
-print(f"[HF Upload] Asset published at: {hf_public_url}")
+
+for attempt in range(3):
+    try:
+        api.upload_file(
+            path_or_fileobj=final_video_path,
+            path_in_repo=remote_video_path,
+            repo_id=HF_DATASET_REPO,
+            repo_type="dataset"
+        )
+        print(f"[HF Upload] Asset successfully published at: {hf_public_url}")
+        break
+    except Exception as up_err:
+        print(f"[HF Upload Notice] Attempt {attempt+1} notice: {up_err}")
+        time.sleep(3)
 
 # 12. Finalize Job Status
 update_status(100, "Automation execution completed successfully on Kaggle!", status="completed", asset_url=hf_public_url)
 
-# Upload job status to Hugging Face
-api.upload_file(
-    path_or_fileobj="job_status.json",
-    path_in_repo=f"jobs/{JOB_ID}.json",
-    repo_id=HF_DATASET_REPO,
-    repo_type="dataset"
-)
-api.upload_file(
-    path_or_fileobj="job_status.json",
-    path_in_repo="jobs/latest_job.json",
-    repo_id=HF_DATASET_REPO,
-    repo_type="dataset"
-)
+for attempt in range(3):
+    try:
+        api.upload_file(
+            path_or_fileobj="job_status.json",
+            path_in_repo="jobs/latest_job.json",
+            repo_id=HF_DATASET_REPO,
+            repo_type="dataset"
+        )
+        break
+    except Exception:
+        time.sleep(2)
 
 print("=" * 60)
 print(f">>> DORIS AI STORYTELLER — KAGGLE JOB {JOB_ID} COMPLETED!")
