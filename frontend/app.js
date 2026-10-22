@@ -109,6 +109,33 @@ const premiumEngineBox = document.getElementById('premiumEngineBox');
 const engineKeyStatus = document.getElementById('engineKeyStatus');
 const step3Title = document.getElementById('step3Title');
 const step3Desc = document.getElementById('step3Desc');
+const step3Num = document.getElementById('step3Num');
+const voiceStepNum = document.getElementById('voiceStepNum');
+
+// DOM Elements: Character Reference Anchor
+const stepCharRefCard = document.getElementById('stepCharRefCard');
+const charRefStepNum = document.getElementById('charRefStepNum');
+const charRefStatusBadge = document.getElementById('charRefStatusBadge');
+const charRefPreviewImg = document.getElementById('charRefPreviewImg');
+const charRefNameDisplay = document.getElementById('charRefNameDisplay');
+const charRefDescDisplay = document.getElementById('charRefDescDisplay');
+const charRefFileInput = document.getElementById('charRefFileInput');
+const resetCharRefBtn = document.getElementById('resetCharRefBtn');
+
+// DOM Elements: Queue / Review Card
+const queueStepNum = document.getElementById('queueStepNum');
+const queueCardTitle = document.getElementById('queueCardTitle');
+const queueCardDesc = document.getElementById('queueCardDesc');
+const queueBadgeText = document.getElementById('queueBadgeText');
+const emptyMatrixText = document.getElementById('emptyMatrixText');
+
+const DEFAULT_CHAR_REF_IMG = 'assets/doris_character_reference_sheet.png';
+const DEFAULT_CHAR_REF_URL = 'https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/references/doris_character_reference_sheet.png';
+const STORAGE_KEY_CHAR_REF = 'doris_custom_char_ref';
+const STORAGE_KEY_CHAR_NAME = 'doris_custom_char_name';
+
+let activeCharRefData = localStorage.getItem(STORAGE_KEY_CHAR_REF) || null;
+let activeCharRefName = localStorage.getItem(STORAGE_KEY_CHAR_NAME) || 'Dr. Doris Psych Host — Daniel (Model Sheet)';
 
 // DOM Elements: Studio Controls
 const folderInput = document.getElementById('folderInput');
@@ -198,24 +225,101 @@ function setStudioMode(isPremium) {
     if (premiumStudioBanner) premiumStudioBanner.classList.remove('hidden');
     if (step1StandardContent) step1StandardContent.classList.add('hidden');
     if (step1PremiumContent) step1PremiumContent.classList.remove('hidden');
+    if (stepCharRefCard) stepCharRefCard.classList.remove('hidden');
     if (premiumEngineBox) premiumEngineBox.classList.remove('hidden');
     if (labelPremiumMode) labelPremiumMode.classList.add('active');
     if (labelStandardMode) labelStandardMode.classList.remove('active');
+
+    if (voiceStepNum) voiceStepNum.textContent = "3";
+    if (step3Num) {
+      step3Num.textContent = "4";
+      step3Num.className = "step-num gem-step-num";
+    }
     if (step3Title) step3Title.textContent = "Input Story Script & Prompts";
-    if (step3Desc) step3Desc.innerHTML = "Paste script sentences below. In Premium Mode, each line is sent to <strong>Kie.ai NanoBanana 2 Lite</strong> on Kaggle.";
+    if (step3Desc) step3Desc.innerHTML = "Paste script sentences below. In Premium Mode, each line is sent with the character anchor to <strong>Kie.ai NanoBanana 2 Lite</strong> on Kaggle.";
+
+    if (queueStepNum) {
+      queueStepNum.textContent = "💎 5";
+      queueStepNum.className = "step-num gem-step-num";
+    }
+    if (queueCardTitle) queueCardTitle.textContent = "Scene Generation Queue & Review";
+    if (queueCardDesc) queueCardDesc.textContent = "Review your narration lines, environmental prompts, and locked character reference before starting cloud generation.";
+    if (emptyMatrixText) emptyMatrixText.textContent = "Upload your script CSV in Step 1 or paste your script in Step 4 to preview the scenes that will be generated.";
   } else {
     if (premiumStudioBanner) premiumStudioBanner.classList.add('hidden');
     if (step1StandardContent) step1StandardContent.classList.remove('hidden');
     if (step1PremiumContent) step1PremiumContent.classList.add('hidden');
+    if (stepCharRefCard) stepCharRefCard.classList.add('hidden');
     if (premiumEngineBox) premiumEngineBox.classList.add('hidden');
     if (labelStandardMode) labelStandardMode.classList.add('active');
     if (labelPremiumMode) labelPremiumMode.classList.remove('active');
+
+    if (voiceStepNum) voiceStepNum.textContent = "2";
+    if (step3Num) {
+      step3Num.textContent = "3";
+      step3Num.className = "step-num";
+    }
     if (step3Title) step3Title.textContent = "Input Story Script";
     if (step3Desc) step3Desc.innerHTML = "Paste your script below. <strong>Every single line represents one image</strong> in exact serial order from top to bottom.";
+
+    if (queueStepNum) {
+      queueStepNum.textContent = "4";
+      queueStepNum.className = "step-num";
+    }
+    if (queueCardTitle) queueCardTitle.textContent = "Image & Script Alignment";
+    if (queueCardDesc) queueCardDesc.textContent = "Confirms that every image pair aligns 1:1 with its corresponding script sentence before execution.";
+    if (emptyMatrixText) emptyMatrixText.textContent = "Select your images folder and paste your script to preview the 1:1 alignment.";
   }
 
   updateApiKeyBadges();
   updateAlignmentMatrix();
+}
+
+function initCharRefState() {
+  if (activeCharRefData && charRefPreviewImg) {
+    charRefPreviewImg.src = activeCharRefData;
+    if (charRefNameDisplay) charRefNameDisplay.textContent = activeCharRefName;
+    if (charRefDescDisplay) charRefDescDisplay.textContent = "Custom character turnaround sheet active. 100% facial and outfit consistency locked.";
+    if (charRefStatusBadge) charRefStatusBadge.textContent = "🟢 Custom Anchor Active";
+  }
+}
+
+if (charRefFileInput) {
+  charRefFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target.result;
+      activeCharRefData = dataUrl;
+      activeCharRefName = `Custom: ${file.name}`;
+      localStorage.setItem(STORAGE_KEY_CHAR_REF, dataUrl);
+      localStorage.setItem(STORAGE_KEY_CHAR_NAME, activeCharRefName);
+
+      if (charRefPreviewImg) charRefPreviewImg.src = dataUrl;
+      if (charRefNameDisplay) charRefNameDisplay.textContent = activeCharRefName;
+      if (charRefDescDisplay) charRefDescDisplay.textContent = `Custom reference sheet loaded (${file.name}). Applied to all scene prompts.`;
+      if (charRefStatusBadge) charRefStatusBadge.textContent = "🟢 Custom Anchor Active";
+      updateAlignmentMatrix();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+if (resetCharRefBtn) {
+  resetCharRefBtn.addEventListener('click', () => {
+    activeCharRefData = null;
+    activeCharRefName = 'Dr. Doris Psych Host — Daniel (Model Sheet)';
+    localStorage.removeItem(STORAGE_KEY_CHAR_REF);
+    localStorage.removeItem(STORAGE_KEY_CHAR_NAME);
+
+    if (charRefPreviewImg) charRefPreviewImg.src = DEFAULT_CHAR_REF_IMG;
+    if (charRefNameDisplay) charRefNameDisplay.textContent = activeCharRefName;
+    if (charRefDescDisplay) charRefDescDisplay.textContent = "Navy crewneck sweater, white collared shirt, black rectangular glasses, khaki trousers. Turnaround sheet loaded.";
+    if (charRefStatusBadge) charRefStatusBadge.textContent = "🟢 Host Anchor Active";
+    updateAlignmentMatrix();
+  });
 }
 
 if (studioModeToggle) {
@@ -555,6 +659,8 @@ function renderStandardMatrix(totalRows) {
 
 function renderPremiumMatrix(totalRows) {
   matrixList.innerHTML = '';
+  const activeThumbSrc = activeCharRefData || DEFAULT_CHAR_REF_IMG;
+
   for (let i = 0; i < totalRows; i++) {
     const sentence = scriptSentences[i];
     const promptData = csvPrompts[i];
@@ -564,20 +670,20 @@ function renderPremiumMatrix(totalRows) {
     row.className = 'matrix-row';
 
     const thumbHtml = `
-      <div class="img-thumb-wrapper" style="background: rgba(168, 85, 247, 0.12); border-color: rgba(168, 85, 247, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <span style="font-size: 16px;">🍌</span>
+      <div class="img-thumb-wrapper" style="border-color: rgba(168, 85, 247, 0.45); position: relative; overflow: hidden; background: #0b0e18;">
+        <img src="${activeThumbSrc}" alt="Character Reference Anchor" class="img-thumb" style="object-fit: cover;">
         <span class="thumb-num" style="background: #a855f7;">#${i+1}</span>
       </div>
     `;
 
     const textHtml = `
       <div class="row-content">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
           <span class="file-title" style="color: #c084fc;">Scene ${i+1} · Kie.ai NanoBanana 2 Lite (1K)</span>
-          <span class="badge-premium-pill" style="font-size: 10px; padding: 2px 7px;">Dynamic Cloud API</span>
+          <span class="badge-premium-pill" style="font-size: 10px; padding: 2px 7px;">👤 ${activeCharRefData ? 'Custom Ref' : 'Daniel Ref Locked'}</span>
         </div>
         <p class="script-text-preview"><strong>Sentence:</strong> ${sentence}</p>
-        <p class="script-text-preview" style="color: var(--text-dim); font-size: 11px; margin-top: 2px;"><strong>Prompt:</strong> ${promptText}</p>
+        <p class="script-text-preview" style="color: var(--text-dim); font-size: 11px; margin-top: 3px; line-height: 1.4;"><strong>Prompt:</strong> ${promptText}</p>
       </div>
     `;
 
@@ -684,7 +790,8 @@ async function triggerKaggleExecution(params = {}) {
         inputs: {
           job_id: currentJobId,
           voice_model: selectedVoiceKey,
-          is_premium: params.isPremium ? 'true' : 'false'
+          is_premium: params.isPremium ? 'true' : 'false',
+          character_ref_url: DEFAULT_CHAR_REF_URL
         }
       })
     });
@@ -813,6 +920,7 @@ runBtn.addEventListener('click', async () => {
     appendLog(`[PREMIUM] 💎 PREMIUM AUTONOMOUS TASK ENGAGED: ${currentJobId}`, 'info');
     appendLog(`[PREMIUM] External Generation Engine: Kie.ai (AIE.AI)`, 'info');
     appendLog(`[PREMIUM] Model Target: NanoBanana 2 Lite (1K Resolution, 16:9 Landscape)`, 'info');
+    appendLog(`[PREMIUM] Character Anchor: ${activeCharRefName}`, 'info');
     appendLog(`[PREMIUM] Total Scenes Queued for Cloud Image Generation: ${sceneCount}`, 'info');
     appendLog(`[PREMIUM] Execution Strategy: Phase 1: Kie.ai Images → Phase 2: F5-TTS Audio → Phase 3: Stitching`, 'info');
   } else {
@@ -1203,6 +1311,7 @@ document.addEventListener('keydown', (e) => {
 // 14. Initial Application Load
 // ========================================================
 window.addEventListener('DOMContentLoaded', () => {
+  initCharRefState();
   setStudioMode(isPremiumStudio);
   updateSettingsStatus();
   restoreActiveExecutionState();

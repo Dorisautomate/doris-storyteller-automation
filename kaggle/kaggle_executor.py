@@ -127,10 +127,15 @@ os.makedirs("work_dir/images", exist_ok=True)
 
 if IS_PREMIUM:
     update_status(20, "💎 [PREMIUM] Initializing Kie.ai NanoBanana 2 Lite dynamic cloud generation...")
+    CHARACTER_REF_URL = os.environ.get(
+        "CHARACTER_REF_URL",
+        "https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/references/doris_character_reference_sheet.png"
+    )
     print("=" * 60)
     print(">>> 💎 [PREMIUM TASK ENGAGED] KIE.AI DYNAMIC CLOUD GENERATION")
     print(">>> Target Generative Model: 🍌 NanoBanana 2 Lite")
     print(">>> Output Parameters: 1K Resolution (1920x1080), 16:9 Landscape")
+    print(f">>> Active Character Anchor Sheet: {CHARACTER_REF_URL}")
     print(">>> Provider: Kie.ai / AIE.AI API Platform")
     print("=" * 60)
 
@@ -190,10 +195,19 @@ if IS_PREMIUM:
 
         task_id = None
         create_url = "https://api.kie.ai/api/v1/jobs/createTask"
+        
+        # Prepend character consistency prompt anchor if not explicitly referenced
+        final_prompt = prompt
+        if CHARACTER_REF_URL and "cartoon man" not in prompt.lower() and "daniel" not in prompt.lower():
+            final_prompt = f"Using the exact same character features and 2D style from the character reference sheet: {prompt}"
+
         payload = {
             "model": "nano-banana-2-lite",
             "input": {
-                "prompt": prompt,
+                "prompt": final_prompt,
+                "image_url": CHARACTER_REF_URL,
+                "image_urls": [CHARACTER_REF_URL],
+                "reference_image": CHARACTER_REF_URL,
                 "aspect_ratio": "16:9",
                 "resolution": "1K",
                 "output_format": "PNG"

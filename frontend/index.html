@@ -114,15 +114,46 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                 <span>Choose Script CSV (.csv)</span>
               </label>
-              <div id="csvFileInfo" class="folder-info-text">Upload CSV or paste lines in Step 3 below</div>
+              <div id="csvFileInfo" class="folder-info-text">Upload CSV or paste lines in Step 4 below</div>
             </div>
           </div>
         </div>
 
-        <!-- Step 2: Voice Model Selection -->
+        <!-- Step 2: Character Reference Anchor (Active in Premium Mode) -->
+        <div class="step-card char-ref-card" id="stepCharRefCard">
+          <div class="step-header">
+            <span class="step-num gem-step-num" id="charRefStepNum">💎 2</span>
+            <h2>Character Reference Image (Style Anchor)</h2>
+            <span id="charRefStatusBadge" class="badge-pill success">🟢 Anchor Active</span>
+          </div>
+          <p class="step-desc">Required for consistent character generation. Sent with every prompt to <strong>Kie.ai NanoBanana 2 Lite</strong> so character faces, outfits, and aesthetic stay 100% consistent across all scenes.</p>
+
+          <div class="char-ref-preview-container">
+            <div class="char-ref-thumb-wrapper">
+              <img id="charRefPreviewImg" src="assets/doris_character_reference_sheet.png" alt="Character Reference Sheet" class="char-ref-thumb-img">
+              <span class="char-ref-thumb-tag">16:9 Anchor</span>
+            </div>
+            <div class="char-ref-info">
+              <div class="char-ref-title-row">
+                <span class="char-ref-name" id="charRefNameDisplay">Dr. Doris Psych Host — Daniel (Model Sheet)</span>
+              </div>
+              <p class="char-ref-desc" id="charRefDescDisplay">Navy crewneck sweater, white collared shirt, black rectangular glasses, khaki trousers. Turnaround sheet loaded.</p>
+              <div class="char-ref-actions">
+                <input type="file" id="charRefFileInput" accept="image/*" class="hidden-file-input">
+                <label for="charRefFileInput" class="btn btn-outline btn-xs">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  <span>Upload Custom Reference Image</span>
+                </label>
+                <button type="button" id="resetCharRefBtn" class="btn btn-ghost btn-xs">Use Default Daniel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Voice Model Selection -->
         <div class="step-card">
           <div class="step-header">
-            <span class="step-num">2</span>
+            <span class="step-num" id="voiceStepNum">3</span>
             <h2>Select Voice Model</h2>
           </div>
           <p class="step-desc">Choose the voice cloned via F5-TTS zero-shot synthesis on Kaggle T4 GPU.</p>
@@ -148,14 +179,14 @@
           </div>
         </div>
 
-        <!-- Step 3: Script Input -->
+        <!-- Step 4: Script Input -->
         <div class="step-card">
           <div class="step-header">
-            <span class="step-num" id="step3Num">3</span>
-            <h2 id="step3Title">Input Story Script</h2>
+            <span class="step-num" id="step3Num">4</span>
+            <h2 id="step3Title">Input Story Script & Prompts</h2>
             <div class="line-counter-badge" id="lineCountBadge">0 Lines</div>
           </div>
-          <p class="step-desc" id="step3Desc">Paste your script below. <strong>Every single line represents one image</strong> in exact serial order from top to bottom.</p>
+          <p class="step-desc" id="step3Desc">Paste your script below. In Premium Mode, each line is sent with the character anchor to <strong>Kie.ai NanoBanana 2 Lite</strong> on Kaggle.</p>
 
           <textarea id="scriptInput" class="script-textarea" placeholder="Line 1 corresponds to Image 1...&#10;Line 2 corresponds to Image 2...&#10;Line 3 corresponds to Image 3...&#10;Line 4 corresponds to Image 4..."></textarea>
 
@@ -187,24 +218,24 @@
       <!-- Right Column: Visual Alignment & Execution Monitor -->
       <section class="panel preview-panel">
         
-        <!-- Visual Alignment Confirmation Matrix -->
+        <!-- Visual Alignment / Queue Card -->
         <div class="step-card alignment-card">
           <div class="step-header alignment-header">
             <div>
-              <span class="step-num">4</span>
-              <h2>Visual Alignment Matrix</h2>
+              <span class="step-num" id="queueStepNum">5</span>
+              <h2 id="queueCardTitle">Scene Generation Queue & Review</h2>
             </div>
             <div id="alignmentBadge" class="alignment-badge mismatch">
               <span class="badge-dot"></span>
-              <span class="badge-text">Awaiting Folder & Script</span>
+              <span class="badge-text" id="queueBadgeText">Awaiting Script / CSV</span>
             </div>
           </div>
-          <p class="step-desc">Confirms that every image pair aligns 1:1 with its corresponding script sentence before execution.</p>
+          <p class="step-desc" id="queueCardDesc">Review your narration lines, environmental prompts, and locked character reference before starting cloud generation.</p>
 
           <div class="alignment-matrix-container" id="matrixContainer">
             <div class="empty-state" id="emptyMatrix">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-              <p>Select your images folder and paste your script to preview the 1:1 alignment.</p>
+              <p id="emptyMatrixText">Upload your script CSV in Step 1 or paste your script in Step 4 to preview the scenes that will be generated.</p>
             </div>
             <div id="matrixList" class="matrix-list hidden"></div>
           </div>

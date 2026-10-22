@@ -1483,3 +1483,113 @@ body {
   color: #c084fc;
   border: 1px solid rgba(168, 85, 247, 0.4);
 }
+
+/* Character Reference Image Anchor Card */
+.char-ref-card {
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  background: linear-gradient(180deg, rgba(22, 27, 46, 0.85), rgba(15, 18, 30, 0.95));
+  transition: border-color 0.2s ease;
+}
+
+.char-ref-preview-container {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.char-ref-thumb-wrapper {
+  position: relative;
+  width: 140px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  background: #090c15;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.char-ref-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.char-ref-thumb-tag {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  background: rgba(0, 0, 0, 0.8);
+  font-size: 9px;
+  font-weight: 700;
+  color: #c084fc;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.char-ref-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.char-ref-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.char-ref-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.char-ref-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.char-ref-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-xs {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ghost:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.badge-pill.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}

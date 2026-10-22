@@ -15,6 +15,10 @@ on:
         description: 'Run in Premium Mode (Kie.ai Dynamic Cloud Generation)'
         required: false
         default: 'false'
+      character_ref_url:
+        description: 'Character Reference Image URL for Dynamic Generation'
+        required: false
+        default: 'https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/references/doris_character_reference_sheet.png'
 
 jobs:
   execute-pipeline:
@@ -47,8 +51,9 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           VOICE_MODEL: ${{ github.event.inputs.voice_model || 'hope_professional' }}
           IS_PREMIUM: ${{ github.event.inputs.is_premium || 'false' }}
+          CHARACTER_REF_URL: ${{ github.event.inputs.character_ref_url || 'https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/references/doris_character_reference_sheet.png' }}
         run: |
-          echo ">>> Pushing kernel to Kaggle T4 GPU server (Voice: $VOICE_MODEL, Premium: $IS_PREMIUM)..."
+          echo ">>> Pushing kernel to Kaggle T4 GPU server (Voice: $VOICE_MODEL, Premium: $IS_PREMIUM, Ref: $CHARACTER_REF_URL)..."
           python -m kaggle kernels push -p kaggle --accelerator NvidiaTeslaT4
 
       - name: Monitor Execution & Sync to Hugging Face
@@ -57,5 +62,6 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           VOICE_MODEL: ${{ github.event.inputs.voice_model || 'hope_professional' }}
           IS_PREMIUM: ${{ github.event.inputs.is_premium || 'false' }}
+          CHARACTER_REF_URL: ${{ github.event.inputs.character_ref_url || 'https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/references/doris_character_reference_sheet.png' }}
         run: |
           python scripts/monitor_cloud_execution.py
