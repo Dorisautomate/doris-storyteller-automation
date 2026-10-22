@@ -1,7 +1,7 @@
 ---
 name: doris
 description: >-
-  Master end-to-end autonomous YouTube psychology video production engine for Dr Doris Psych (https://www.youtube.com/@DrDorisPsych). Runs continuously without user interruption from initial channel audit and duplicate prevention, through outlier title formulation, 11-beat PSY-Ladder scriptwriting, Google Flow batch image generation via active Chrome, live web app video assembly on dorisautomate.web.app, to final 1080p MP4 delivery. Trigger on '/doris', 'Doris', 'generate for me a video for my channel', or requests to run the complete Doris channel automation pipeline.
+  Master end-to-end autonomous YouTube psychology video production engine for Dr Doris Psych (https://www.youtube.com/@DrDorisPsych). Runs continuously without user interruption from initial channel audit and duplicate prevention, through outlier title formulation, 11-beat PSY-Ladder scriptwriting, Google Flow batch image generation via active Chrome OR direct cloud generation bypass via Premium Studio on dorisautomate.web.app (Kie.ai NanoBanana 2 Lite), to final 1080p MP4 delivery. Trigger on '/doris', 'Doris', 'generate for me a video for my channel', 'using my premium studio', 'premium account', or requests to run the complete Doris channel automation pipeline.
 ---
 
 # Doris — Master YouTube Video Production Pipeline
@@ -11,23 +11,34 @@ The unified, 100% autonomous channel production skill specifically configured fo
 > [!IMPORTANT]
 > ### Strict Process Adherence & Zero Improvisation Mandate
 > Once triggered, this skill **MUST NOT STOP, PAUSE, OR IMPROVISE**.
-> - **NEVER IMPROVISE OR BYPASS ANY STAGE**: The agent **MUST** follow every step of this pipeline literally and strictly.
-> - **CANONICAL CHARACTER MODEL SHEET**: Every Flow generation must use the official channel host character model sheet located at:
->   `C:\Users\doris\Downloads\Doris Automation\assets\doris_character_reference_sheet.png` (mirror at `C:\Users\doris\Downloads\doris_character_reference_sheet.png`).
->   Never generate without uploading this exact reference sheet into the Flow project.
+> - **NEVER IMPROVISE OR BYPASS ANY STAGE (UNLESS PREMIUM STUDIO IS SPECIFIED)**: The agent **MUST** follow every step of this pipeline literally and strictly.
+> - **💎 PREMIUM STUDIO BYPASS PROTOCOL (NO VEED.IO, NO GOOGLE FLOW)**:
+>   If the user mentions **"premium account"**, **"premium studio"**, **"using my premium studio"**, or requests premium generation:
+>   - **DO NOT** open Google Flow, **DO NOT** open Veed.io, and **DO NOT** generate or stitch images locally!
+>   - **BYPASS PHASE 3 COMPLETELY**: Transition directly from Phase 2 (Scriptwriting & CSV generation) to **Phase 4 Mode B: 💎 Premium Studio directly on `https://dorisautomate.web.app`**.
+>   - In Premium Studio, simply upload the CSV, verify the Character Reference Sheet is anchored, select the voice, and click **"Run Video Automation"**.
+>   - Kaggle T4 GPU + Kie.ai NanoBanana 2 Lite dynamically generates every 1K 16:9 image line-by-line in the cloud, synthesizes F5-TTS audio, compiles the 1080p MP4, and delivers it automatically.
+> - **CANONICAL CHARACTER MODEL SHEET**: Every generation (Flow or Premium Studio) must use the official channel host character model sheet located at:
+>   `C:\Users\doris\Downloads\Doris Automation\assets\doris_character_reference_sheet.png` (mirror at `C:\Users\doris\Downloads\doris_character_reference_sheet.png` or HF URL: `https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/references/doris_character_reference_sheet.png`).
+>   Never generate without anchoring this exact reference sheet.
 > - **RICH ENVIRONMENTAL PROMPTS (NO BLANK BACKGROUNDS)**: Characters must NEVER be isolated on a plain white background. Every prompt must describe the character, the specific action, and a rich, detailed environment corresponding directly to what is happening in the sentence narrative (e.g. corporate glass conference room, rainy evening car interior, psychology consultation office, university lecture hall, illuminated neuroscience lab).
-> - **BROWSER AGENT EXECUTION (NO HARDCODED TIMEOUT SCRIPTS)**: Google Flow generation must be driven by an active **Browser Agent** inspecting the UI visually, uploading the character reference sheet, monitoring scene cards, and actively clicking the **Retry** button on any failed scene until 100% of rows are green. Never use a blind script with a premature timeout (e.g., 20-minute limit on a 170-scene video).
-> - **NO IMAGE RECYCLING**: Never reuse or copy images from previous runs or older project folders. Every single video requires fresh scene frames batch-generated through Google Flow.
+> - **BROWSER AGENT EXECUTION (NO HARDCODED TIMEOUT SCRIPTS)**: For standard Google Flow generation, execution must be driven by an active **Browser Agent** inspecting the UI visually, uploading the character reference sheet, monitoring scene cards, and actively clicking the **Retry** button on any failed scene until 100% of rows are green. Never use a blind script with a premature timeout.
+> - **NO IMAGE RECYCLING**: Never reuse or copy images from previous runs or older project folders. Every single video requires fresh scene frames.
 > - **100% CLOUD VIDEO COMPILATION ON WEB APP (NEVER LOCAL FFMPEG STITCHING)**: Assembly and rendering must be automated on `https://dorisautomate.web.app` using the Kaggle T4 GPU worker container and cloud orchestrator. Never stitch images locally on the desktop with FFmpeg demuxer.
 > - **STRICT DURATION CALIBRATION**: If a 1-minute video is requested, the script must be a full 60 seconds (150–240 words, 14–16 sentences). If a 15-minute video is requested, the script must be 2,400–3,100 words (160–190 sentences).
-> - The agent **must autonomously execute all 5 phases sequentially in one continuous run**, auto-resolving any minor hurdles, and only concluding when the finalized, synchronized 1080p master video is delivered.
+> - The agent **must autonomously execute the entire pipeline end-to-end in one continuous run**, auto-resolving any minor hurdles, and only concluding when the finalized, synchronized 1080p master video is delivered.
 
 ```mermaid
 flowchart TD
     A["Phase 1: Mandatory Channel Audit & Outlier Mining\n• Check all existing videos on @DrDorisPsych\n• Prevent duplicate topics & cannibalization\n• 3x-10x cross-niche outlier multiplier\n• Psychology niche bending & scarcity audit"] --> B["Phase 2: Scriptwriting & Deliverables\n• 2,400-3,100 word 11-Beat PSY-Ladder script\n• Sentence-by-sentence CSV (SN, SCRIPT, PROMPT)\n• 1-sentence-per-line TXT for audio sync"]
-    B --> C["Phase 3: Google Flow Scene Generation\n• Connect to active Chrome session (Port 9222)\n• Upload CSV to Flow tool\n• Nano Banana 2 Lite (16:9) + host character ref\n• In-memory DOM base64 extraction (0% failure)\n• Save sequential '1. [sentence].jpg' folder"]
-    C --> D["Phase 4: Web App Automation (dorisautomate.web.app)\n• Navigate to live web app via browser agent\n• Select image folder & paste script lines\n• Choose voice (Hope — Professional by default)\n• Verify Visual Alignment Matrix (N Images ↔ N Lines)\n• Trigger cloud execution & monitor in real-time"]
-    D --> E["Phase 5: Master Video Delivery & Playback\n• Fetch finalized 1080p MP4 from Hugging Face\n• Record job to Execution Logs & Video Library\n• Present playable video & download link to user"]
+    
+    B -->|Standard Mode: Google Flow Batch| C["Phase 3: Google Flow Scene Generation\n• Connect to active Chrome session (Port 9222)\n• Upload CSV to Flow tool\n• Nano Banana 2 Lite (16:9) + host character ref\n• In-memory DOM base64 extraction (0% failure)\n• Save sequential '1. [sentence].jpg' folder"]
+    C --> D1["Phase 4 Mode A: Standard Web App Studio\n• Ingest image folder & paste script lines\n• Verify Visual Alignment Matrix\n• Assemble on dorisautomate.web.app"]
+    
+    B -->|User mentions 'Premium Studio' / 'Premium Account' (FAST-TRACK BYPASS)| D2["Phase 4 Mode B: 💎 Premium Studio Directly on dorisautomate.web.app\n• BYPASS Google Flow, Veed.io & local images completely\n• Upload CSV directly to dorisautomate.web.app\n• Verify Character Anchor (Host Daniel Model Sheet)\n• Trigger Kaggle T4 GPU cloud execution\n• Dynamic Kie.ai NanoBanana 2 Lite (1K 16:9) generation\n• F5-TTS voiceover synthesis & cloud 1080p rendering"]
+    
+    D1 --> E["Phase 5: Master Video Delivery & Playback\n• Fetch finalized 1080p MP4 from Hugging Face\n• Record job to Execution Logs & Video Library\n• Present playable video & download link to user"]
+    D2 --> E
 ```
 
 ---
@@ -38,6 +49,9 @@ Activate this skill whenever the user says:
 - `"/doris"`
 - `"/doris generate for me a video for my channel"`
 - *"Doris, generate for me a video for my channel"*
+- *"Doris, generate a video for my channel using my premium studio"*
+- *"Doris, make a video with my premium account"*
+- *"Use premium studio to generate a video for Dr Doris Psych"*
 - *"Run the Doris pipeline to create a video for Dr Doris Psych"*
 - *"Generate a complete video from scratch for my channel"*
 
@@ -109,11 +123,32 @@ Execute the full long-form psychology script adhering strictly to the **PSY-Ladd
 3. **1-Sentence-Per-Line TXT Export**:
    - Save a companion `.txt` file where line $N$ matches row $N$ of the CSV verbatim.
    - Save both files to `C:\Users\doris\Downloads\<Title_Slug>.csv` and `.txt`.
-   - **Immediately transition to Phase 3 without pausing**.
 
 ---
 
-### Phase 3: Google Flow Scene Generation (Browser Agent Driven)
+### Workflow Branching: Standard Flow vs. 💎 Premium Studio Fast-Track Bypass
+
+Immediately upon completing Phase 2 (Scriptwriting & Deliverables), the agent must evaluate the user's initial instruction:
+
+> [!IMPORTANT]
+> **Check for Premium Studio Invocations**:
+> Does the prompt mention **"premium studio"**, **"premium account"**, **"using my premium studio"**, or **"premium"**?
+
+- **CASE 1: User Mentioned Premium Studio / Premium Account (FAST-TRACK BYPASS)**:
+  - **BYPASS GOOGLE FLOW & VEED.IO COMPLETELY**: Do **NOT** navigate to Google Flow, do **NOT** navigate to Veed.io, and do **NOT** generate or stitch images locally on the desktop!
+  - **SKIP PHASE 3**: Transition directly to **Phase 4 Mode B: 💎 Premium Studio on `https://dorisautomate.web.app`**.
+  - Upload the generated CSV file directly to the web app (`#csvFileInput`).
+  - Verify that the Character Reference Sheet is anchored (default host Daniel at `assets/doris_character_reference_sheet.png`).
+  - Select the voice model (Default: Hope — Professional).
+  - Click **"Run Video Automation"** (`#runBtn`).
+  - Kaggle T4 GPU + Kie.ai NanoBanana 2 Lite (1K 16:9) will dynamically generate all scene images in the cloud, synthesize F5-TTS audio, compile the 1080p MP4, and deliver it via Hugging Face.
+
+- **CASE 2: Standard Request (No Premium Mention)**:
+  - Proceed normally through **Phase 3: Google Flow Scene Generation** below, connecting via active Chrome (`localhost:9222`) to batch-generate images, download them to `C:\Users\doris\Downloads\<Title_Folder>`, and assemble them in Phase 4 Mode A.
+
+---
+
+### Phase 3: Google Flow Scene Generation (Browser Agent Driven — Standard Mode Only)
 
 Batch-generate all visual frames using an interactive **Browser Agent** connected to the user's authenticated Google Chrome session:
 
@@ -175,25 +210,46 @@ The web app supports two operating studio modes accessible via the **Studio Mode
 4. **Step 4 — Alignment Matrix**:
    - Verify `🟢 Aligned: N Images ↔ N Sentences` and click `#runBtn`.
 
-#### Mode B: 💎 Premium Studio (Kie.ai Dynamic Cloud Generation)
-1. **API Key Setup (Settings Tab)**:
-   - Navigate to the **Settings Tab** (`#navSettingsBtn`).
-   - Input and save the **Kie.ai (AIE.AI)** API Key (`#kieApiKeyInput`). The key is stored securely in `localStorage` under `doris_kie_api_key`.
-2. **Model Specification**:
-   - Strictly locked to **`NanoBanana 2 Lite`** (`nano-banana-2-lite`) at **1K resolution (16:9 landscape standard)**.
-3. **Step 1 — CSV Dataset Ingestion**:
-   - Upload the generated CSV (`SN, SCRIPT, PROMPT`) via `#csvFileInput` or paste into `#scriptInput`.
-   - The Visual Alignment Matrix renders prompt summaries and sentences side-by-side.
-4. **Step 2 & 3 — Voice & Execution**:
-   - Select voice profile (Default: Hope Professional).
-   - Click `#runBtn` ("Run Video Automation [PREMIUM]").
-5. **Kaggle Cloud Worker Execution**:
-   - Dispatches GitHub Actions with `is_premium: true` and forwards the API key.
-   - Kaggle executes `kaggle_executor.py` in `IS_PREMIUM` mode:
-     - **Phase 1**: Sends every prompt to Kie.ai `NanoBanana 2 Lite`, polls status, downloads 1K images, and names them sequentially: `<SN>. <Sentence>.jpg`.
-     - **Phase 2**: Synthesizes sentence audio via F5-TTS zero-shot voice cloning.
-     - **Phase 3**: Renders sentence-synced 1080p MP4 with FFmpeg and uploads to Hugging Face.
-   - Outputs live `[PREMIUM 💎]` tags and milestone updates in execution logs.
+#### Mode B: 💎 Premium Studio (Direct Cloud Generation Bypass)
+
+> [!TIP]
+> **Zero Local Image Generation & Zero Flow / Veed.io Requirements**:
+> Use this mode whenever the user mentions **"premium account"**, **"premium studio"**, or **"using my premium studio"**. This completely bypasses Google Flow, Veed.io, and all desktop image processing.
+
+1. **Navigate Directly to Web App**:
+   - Open `https://dorisautomate.web.app` using the browser agent or active Chrome session.
+2. **Switch to Premium Studio**:
+   - Ensure the **Studio Mode Toggle** (`#studioModeToggle`) is flipped to **💎 Premium**.
+   - The UI displays the active badge: `Premium Studio Active · Kie.ai Dynamic Cloud Generation (NanoBanana 2 Lite · 1K)`.
+3. **API Key Setup & Status Check**:
+   - Verify the status badge displays `🟢 Kie.ai API Configured`.
+   - If not yet configured, switch to the **Settings Tab** (`#navSettingsBtn`), paste the API key (`12b5f2a14a89e0b265c05e789962efc6` or user-provided key) into `#kieApiKeyInput`, click **Save API Key**, and return to Studio (`#navStudioBtn`).
+4. **Step 1 — Upload Script CSV Dataset**:
+   - Click `#csvFileInput` and upload the generated CSV (`C:\Users\doris\Downloads\<Title_Slug>.csv` with `SN, SCRIPT, PROMPT`).
+   - The badge updates to: `N Scenes Loaded`.
+5. **Step 2 — Character Reference Image (Style Anchor)**:
+   - Step 2 card (`#charRefCard`) automatically locks the official host turnaround model sheet:
+     `assets/doris_character_reference_sheet.png` / `👤 Dr. Doris Psych Host — Daniel (Model Sheet)`.
+   - Verify the green indicator shows: `🟢 Anchor Active`.
+   - If a custom character sheet is required, upload it via `#charRefInput`.
+6. **Step 3 — Select Voice Model**:
+   - Verify Voice Model is set to **`✨ Hope — Professional, Clear & Natural (Default)`** (`#voiceSelect`).
+7. **Step 5 — Scene Generation Queue & Review**:
+   - Review the generated scene cards. Each scene displays:
+     - Locked Anchor: `👤 Daniel Ref Locked`
+     - Narration Line: sentence from CSV `SCRIPT` column
+     - Environmental Prompt: detailed setting from CSV `PROMPT` column
+     - Status: `🟢 Ready for Cloud Gen: N Scenes`
+8. **Click "Run Video Automation"**:
+   - Click `#runBtn` ("Run Video Automation").
+   - The UI engages the Execution Monitor (`#executionMonitor`) with a real-time progress bar, status milestone updates, and a `Cancel Execution` button.
+9. **Kaggle Cloud Worker Execution**:
+   - Dispatches GitHub Actions workflow (`trigger_pipeline.yml`) with `is_premium: true`, passing the API key and character anchor.
+   - Kaggle spins up worker `doris-storyteller-worker` on **NVIDIA Tesla T4 GPU (CUDA)**:
+     - **Phase 1: Dynamic Cloud Image Generation**: Submits each prompt to **Kie.ai NanoBanana 2 Lite** (`nano-banana-2-lite`) at 1K resolution (1920x1080, 16:9) with the character reference sheet anchor. Polling downloads each image in ~12–16 seconds and names it `<SN>. <Sentence>.jpg`.
+     - **Phase 2: High-Fidelity Audio Synthesis**: Synthesizes sentence-by-sentence audio via F5-TTS zero-shot voice cloning on CUDA.
+     - **Phase 3: 1080p Video Compilation**: Stitches the master audio and images into a synchronized 1080p MP4 with FFmpeg and uploads to Hugging Face.
+   - Pushes live milestone and percentage updates directly to `dorisautomate.web.app` in real-time.
    - History logs and table record the task with the `💎 Premium (Kie.ai)` tier badge.
 
 ---
@@ -205,13 +261,13 @@ The web app supports two operating studio modes accessible via the **Studio Mode
 2. **Library Registration**:
    - Verify that the execution entry appears in the web app's **Execution Logs & History** tab with status `🟢 Completed`.
 3. **Final Delivery Message to User**:
-   - Once (and only once) all 5 phases are 100% complete, deliver the completion report:
+   - Once (and only once) all phases are 100% complete, deliver the completion report:
      - **Video Title & Topic Angle**
      - **Channel Attribution**: Dr Doris Psych (`@DrDorisPsych`)
      - **Voice Profile Used**: Hope — Professional, Clear & Natural
      - **Total Scenes / Images Generated**: (e.g. 180 scenes)
      - **Total Script Word Count & Runtime**: (e.g. 2,850 words / 15 mins 40 secs)
-     - **Direct Playable Video Link**: [Watch Video](https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/hope_professional_story_video.mp4)
+     - **Direct Playable Video Link**: [Watch Video](https://huggingface.co/datasets/Dorisautomate/automation-assets/resolve/main/videos/doris_kaggle_story_video.mp4)
      - **Direct MP4 Download Link**
      - **Live Web App Dashboard**: [https://dorisautomate.web.app](https://dorisautomate.web.app)
 
@@ -219,9 +275,10 @@ The web app supports two operating studio modes accessible via the **Studio Mode
 
 ## Standard Operating Procedures for Autonomous Agents
 
-1. **Continuous Autonomy**: Never pause for user input between phases. Execute all 5 phases end-to-end.
+1. **Continuous Autonomy**: Never pause for user input between phases. Execute all phases end-to-end.
 2. **Always use active Chrome (Port 9222)**: Never launch a separate unauthenticated headless browser.
 3. **Mandatory Duplicate Prevention**: Always check `@DrDorisPsych` before locking the topic.
 4. **Enforce 1:1 Image-to-Sentence parity**: Every image must strictly correspond to its numbered script sentence.
 5. **Primary Compiler**: Always use `dorisautomate.web.app` as the primary live compiler.
 6. **Default Voice**: Default voice is always Hope Professional.
+7. **💎 Premium Studio Fast-Track Priority**: Whenever the user mentions "premium studio", "premium account", or "using my premium studio", **NEVER visit Google Flow or Veed.io**. Completely bypass Phase 3 and go directly to `https://dorisautomate.web.app` in 💎 Premium Studio mode. Upload the CSV and let the cloud Kaggle T4 GPU + Kie.ai NanoBanana 2 Lite pipeline generate all images and video automatically.
