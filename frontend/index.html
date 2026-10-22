@@ -32,34 +32,90 @@
           <span>Execution Logs & History</span>
           <span id="historyCountBadge" class="nav-counter">0</span>
         </button>
+        <button id="navSettingsBtn" class="nav-tab">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Settings</span>
+        </button>
       </nav>
 
-      <div class="header-status">
-        <span class="status-pill online"><span class="dot"></span> Kaggle T4 & Hugging Face Ready</span>
+      <div class="header-right-area">
+        <!-- Studio Mode Switcher / Toggle -->
+        <div class="studio-toggle-wrapper">
+          <span class="toggle-mode-label" id="labelStandardMode">Standard</span>
+          <label class="switch-toggle" title="Switch between Standard Studio (Local Flow images) and Premium Studio (Kie.ai Cloud Generator)">
+            <input type="checkbox" id="studioModeToggle" role="switch" aria-label="Toggle Premium Studio">
+            <span class="slider round"></span>
+          </label>
+          <span class="toggle-mode-label premium-gradient-text" id="labelPremiumMode">💎 Premium</span>
+        </div>
+
+        <div class="header-status">
+          <span class="status-pill online"><span class="dot"></span> Kaggle T4 & Hugging Face Ready</span>
+        </div>
       </div>
     </header>
 
     <!-- VIEW 1: Generator Studio -->
     <div id="studioView" class="view-panel active">
+      <!-- Premium Studio Banner -->
+      <div id="premiumStudioBanner" class="premium-studio-banner hidden">
+        <div class="banner-left">
+          <div class="gem-badge-icon">💎</div>
+          <div>
+            <div class="banner-title-row">
+              <h3>Premium Studio Active · Kie.ai Dynamic Cloud Generation</h3>
+              <span class="badge-premium-pill">NanoBanana 2 Lite · 1K</span>
+            </div>
+            <p>Every line in your script/CSV is sent dynamically to <strong>Kie.ai (NanoBanana 2 Lite)</strong> on Kaggle during execution. Zero local image generation required.</p>
+          </div>
+        </div>
+        <div class="banner-right">
+          <span id="bannerApiKeyStatus" class="api-key-badge-pill warning">⚠️ API Key Required</span>
+          <button id="bannerSettingsBtn" class="btn btn-outline btn-xs">Configure in Settings</button>
+        </div>
+      </div>
+
     <main class="main-content">
       <!-- Left Column: Controls & Inputs -->
       <section class="panel control-panel">
         
-        <!-- Step 1: Folder Selection -->
-        <div class="step-card">
-          <div class="step-header">
-            <span class="step-num">1</span>
-            <h2>Select Image Folder</h2>
+        <!-- Step 1: Standard Folder OR Premium CSV Dataset -->
+        <div class="step-card" id="step1Card">
+          <!-- Standard Mode Container -->
+          <div id="step1StandardContent">
+            <div class="step-header">
+              <span class="step-num">1</span>
+              <h2>Select Image Folder</h2>
+            </div>
+            <p class="step-desc">Pick the local folder containing your numbered images (e.g., <code>1. image.jpg</code>, <code>2. image.jpg</code>).</p>
+            
+            <div class="file-drop-area" id="dropArea">
+              <input type="file" id="folderInput" webkitdirectory directory multiple class="hidden-file-input">
+              <label for="folderInput" class="upload-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                <span>Choose Image Folder</span>
+              </label>
+              <div id="folderInfo" class="folder-info-text">No folder selected yet</div>
+            </div>
           </div>
-          <p class="step-desc">Pick the local folder containing your numbered images (e.g., <code>1. image.jpg</code>, <code>2. image.jpg</code>).</p>
-          
-          <div class="file-drop-area" id="dropArea">
-            <input type="file" id="folderInput" webkitdirectory directory multiple class="hidden-file-input">
-            <label for="folderInput" class="upload-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-              <span>Choose Image Folder</span>
-            </label>
-            <div id="folderInfo" class="folder-info-text">No folder selected yet</div>
+
+          <!-- Premium Mode Container -->
+          <div id="step1PremiumContent" class="hidden">
+            <div class="step-header">
+              <span class="step-num gem-step-num">💎 1</span>
+              <h2>Upload Script CSV Dataset</h2>
+              <div class="line-counter-badge gem-badge" id="csvRowsBadge">0 Scenes</div>
+            </div>
+            <p class="step-desc">Upload your script CSV (<code>SN, SCRIPT, PROMPT</code>). Every single line will be generated on Kaggle via <strong>Kie.ai NanoBanana 2 Lite</strong> in 1K resolution.</p>
+            
+            <div class="file-drop-area premium-drop-area" id="csvDropArea">
+              <input type="file" id="csvFileInput" accept=".csv" class="hidden-file-input">
+              <label for="csvFileInput" class="upload-btn btn-premium-gradient">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span>Choose Script CSV (.csv)</span>
+              </label>
+              <div id="csvFileInfo" class="folder-info-text">Upload CSV or paste lines in Step 3 below</div>
+            </div>
           </div>
         </div>
 
@@ -95,13 +151,35 @@
         <!-- Step 3: Script Input -->
         <div class="step-card">
           <div class="step-header">
-            <span class="step-num">3</span>
-            <h2>Input Story Script</h2>
+            <span class="step-num" id="step3Num">3</span>
+            <h2 id="step3Title">Input Story Script</h2>
             <div class="line-counter-badge" id="lineCountBadge">0 Lines</div>
           </div>
-          <p class="step-desc">Paste your script below. <strong>Every single line represents one image</strong> in exact serial order from top to bottom.</p>
+          <p class="step-desc" id="step3Desc">Paste your script below. <strong>Every single line represents one image</strong> in exact serial order from top to bottom.</p>
 
           <textarea id="scriptInput" class="script-textarea" placeholder="Line 1 corresponds to Image 1...&#10;Line 2 corresponds to Image 2...&#10;Line 3 corresponds to Image 3...&#10;Line 4 corresponds to Image 4..."></textarea>
+
+          <!-- Premium Engine Configuration Box -->
+          <div id="premiumEngineBox" class="premium-engine-box hidden">
+            <div class="engine-meta-row">
+              <span class="engine-tag">External Generation Engine</span>
+              <span class="engine-name">🍌 NanoBanana 2 Lite (Kie.ai)</span>
+            </div>
+            <div class="engine-details-grid">
+              <div class="engine-detail-item">
+                <span class="detail-label">Resolution</span>
+                <span class="detail-val">1K Landscape (16:9)</span>
+              </div>
+              <div class="engine-detail-item">
+                <span class="detail-label">API Credentials</span>
+                <span class="detail-val" id="engineKeyStatus">Checking Key...</span>
+              </div>
+              <div class="engine-detail-item">
+                <span class="detail-label">Dynamic Output</span>
+                <span class="detail-val"><code>1. [sentence].jpg</code></span>
+              </div>
+            </div>
+          </div>
         </div>
 
       </section>
@@ -226,6 +304,11 @@
             <input type="text" id="historySearchInput" placeholder="Filter by Job ID, voice, or status...">
           </div>
           <div class="filter-group">
+            <select id="historyTierFilter" class="styled-select filter-select">
+              <option value="all">All Studios / Tiers</option>
+              <option value="premium">💎 Premium (Kie.ai)</option>
+              <option value="standard">Standard (Flow)</option>
+            </select>
             <select id="historyVoiceFilter" class="styled-select filter-select">
               <option value="all">All Voices</option>
               <option value="hope_professional">✨ Hope (Professional)</option>
@@ -248,6 +331,7 @@
               <thead>
                 <tr>
                   <th>Job Identifier</th>
+                  <th>Studio Tier</th>
                   <th>Date & Time</th>
                   <th>Voice Model</th>
                   <th>Scenes</th>
@@ -270,6 +354,96 @@
 
       </div>
     </div> <!-- /#logsView -->
+
+    <!-- VIEW 3: Settings -->
+    <div id="settingsView" class="view-panel hidden">
+      <div class="settings-page-container">
+        
+        <div class="settings-header-section">
+          <div>
+            <h2>Platform Settings & External AI Configuration</h2>
+            <p>Manage your account API credentials and target models for the Premium Autonomous Studio.</p>
+          </div>
+          <div class="settings-header-badge">
+            <span class="badge-premium-pill">💎 Premium Active</span>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <!-- Card 1: Kie.ai / AIE.AI API Credentials -->
+          <div class="step-card settings-card">
+            <div class="step-header">
+              <span class="step-num gem-step-num">💎</span>
+              <div>
+                <h2>Kie.ai (AIE.AI) API Credentials</h2>
+                <p class="step-desc">Required to autonomously dispatch prompt generation from Kaggle to Kie.ai.</p>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 16px;">
+              <label for="kieApiKeyInput">API Token / Secret Key</label>
+              <div class="input-with-action">
+                <input type="password" id="kieApiKeyInput" class="styled-input" placeholder="Paste your Kie.ai API Key here..." autocomplete="off">
+                <button type="button" id="toggleApiKeyVisibility" class="btn btn-outline btn-sm">Show</button>
+              </div>
+              <small class="helper-text">Your API key is saved locally in your browser storage and passed securely to the Kaggle cloud worker during execution.</small>
+            </div>
+
+            <div class="settings-status-box" id="apiKeyStatusBox">
+              <div class="status-indicator-dot" id="statusDot"></div>
+              <span id="apiKeyStatusMessage">No API Key configured yet.</span>
+            </div>
+
+            <div class="settings-actions-bar">
+              <button id="saveApiKeyBtn" class="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                <span>Save API Key</span>
+              </button>
+              <button id="clearApiKeyBtn" class="btn btn-outline">Clear Key</button>
+            </div>
+          </div>
+
+          <!-- Card 2: Premium Model Configuration -->
+          <div class="step-card settings-card">
+            <div class="step-header">
+              <span class="step-num gem-step-num">🍌</span>
+              <div>
+                <h2>Generative Model Specifications</h2>
+                <p class="step-desc">Strictly configured to the Doris autonomous channel standard.</p>
+              </div>
+            </div>
+
+            <div class="specs-table" style="margin-top: 16px;">
+              <div class="spec-row">
+                <span class="spec-label">Image Generation Model</span>
+                <span class="spec-value highlight">🍌 NanoBanana 2 Lite (Specific)</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Provider Endpoint</span>
+                <span class="spec-value"><code>https://api.kie.ai/api/v1/jobs/createTask</code></span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Resolution Scale</span>
+                <span class="spec-value">1K High Definition (1920×1080 standard)</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Aspect Ratio</span>
+                <span class="spec-value">16:9 Landscape (YouTube Standard)</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Dynamic File Naming</span>
+                <span class="spec-value"><code>1. [sentence].jpg, 2. [sentence].jpg...</code></span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Execution Architecture</span>
+                <span class="spec-value">Phase 1: Dynamic Kie.ai Image Gen → Phase 2: F5-TTS Audio → Phase 3: Stitching</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div> <!-- /#settingsView -->
 
   </div> <!-- /.app-container -->
 

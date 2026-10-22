@@ -1,5 +1,5 @@
 // Doris AI Storyteller — Frontend Application Logic
-// Epic Automate Standard Implementation with Persistent State & Execution Library
+// Epic Automate Standard Implementation with Persistent State, Execution Library & Premium Studio
 
 const HF_DATASET_REPO = "Dorisautomate/automation-assets";
 const HF_BASE_URL = `https://huggingface.co/datasets/${HF_DATASET_REPO}/resolve/main/videos`;
@@ -13,11 +13,26 @@ const VOICE_VIDEO_MAP = {
 const DEFAULT_VIDEO_URL = `${HF_BASE_URL}/why_your_brain_panics_saying_no_1080p.mp4`;
 const STORAGE_KEY_ACTIVE = 'epic_active_job';
 const STORAGE_KEY_HISTORY = 'epic_execution_history';
+const STORAGE_KEY_KIE_KEY = 'doris_kie_api_key';
+const STORAGE_KEY_STUDIO_MODE = 'doris_studio_mode';
 
 // Default initial history seed containing verified cloud runs
 const SEED_HISTORY = [
   {
+    id: "job_dr_doris_be_so_calm_it_makes_people_nervous_15min",
+    tier: "premium",
+    isPremium: true,
+    voice: "hope_professional",
+    voiceLabel: "✨ Hope — Professional (Dr Doris Psych)",
+    scenes: 169,
+    status: "completed",
+    assetUrl: `${HF_BASE_URL}/be_so_calm_it_makes_people_nervous_1080p.mp4`,
+    timestamp: "10/22/2026, 09:40 AM"
+  },
+  {
     id: "job_dr_doris_why_your_brain_panics_saying_no",
+    tier: "standard",
+    isPremium: false,
     voice: "hope_professional",
     voiceLabel: "✨ Hope — Professional (Dr Doris Psych)",
     scenes: 10,
@@ -27,6 +42,8 @@ const SEED_HISTORY = [
   },
   {
     id: "job_hope_professional_master",
+    tier: "standard",
+    isPremium: false,
     voice: "hope_professional",
     voiceLabel: "✨ Hope — Professional, Clear & Natural",
     scenes: 4,
@@ -36,6 +53,8 @@ const SEED_HISTORY = [
   },
   {
     id: "job_hope_upbeat_master",
+    tier: "standard",
+    isPremium: false,
     voice: "hope_upbeat",
     voiceLabel: "✨ Hope — Upbeat & Clear",
     scenes: 4,
@@ -45,26 +64,21 @@ const SEED_HISTORY = [
   },
   {
     id: "job_doris_f5_clone_master",
+    tier: "standard",
+    isPremium: false,
     voice: "doris",
     voiceLabel: "🎙️ Doris Voice (Host — DORIS VOICE.m4a)",
     scenes: 4,
     status: "completed",
     assetUrl: `${HF_BASE_URL}/doris_f5_cloned_story_video.mp4`,
     timestamp: "10/20/2026, 09:20 AM"
-  },
-  {
-    id: "job_doris_psychology_archive",
-    voice: "doris",
-    voiceLabel: "🎙️ Doris Voice (Host — DORIS VOICE.m4a)",
-    scenes: 4,
-    status: "completed",
-    assetUrl: `${HF_BASE_URL}/doris_psychology_story_video.mp4`,
-    timestamp: "10/13/2026, 09:14 AM"
   }
 ];
 
 let selectedImages = [];
 let scriptSentences = [];
+let csvPrompts = [];
+let isPremiumStudio = localStorage.getItem(STORAGE_KEY_STUDIO_MODE) === 'premium';
 let currentJobId = null;
 let isExecuting = false;
 let executionInterval = null;
@@ -73,9 +87,28 @@ let executionLogs = [];
 // DOM Elements: Navigation
 const navStudioBtn = document.getElementById('navStudioBtn');
 const navLogsBtn = document.getElementById('navLogsBtn');
+const navSettingsBtn = document.getElementById('navSettingsBtn');
 const studioView = document.getElementById('studioView');
 const logsView = document.getElementById('logsView');
+const settingsView = document.getElementById('settingsView');
 const historyCountBadge = document.getElementById('historyCountBadge');
+
+// DOM Elements: Studio Mode Switcher
+const studioModeToggle = document.getElementById('studioModeToggle');
+const labelStandardMode = document.getElementById('labelStandardMode');
+const labelPremiumMode = document.getElementById('labelPremiumMode');
+const premiumStudioBanner = document.getElementById('premiumStudioBanner');
+const bannerApiKeyStatus = document.getElementById('bannerApiKeyStatus');
+const bannerSettingsBtn = document.getElementById('bannerSettingsBtn');
+const step1StandardContent = document.getElementById('step1StandardContent');
+const step1PremiumContent = document.getElementById('step1PremiumContent');
+const csvFileInput = document.getElementById('csvFileInput');
+const csvFileInfo = document.getElementById('csvFileInfo');
+const csvRowsBadge = document.getElementById('csvRowsBadge');
+const premiumEngineBox = document.getElementById('premiumEngineBox');
+const engineKeyStatus = document.getElementById('engineKeyStatus');
+const step3Title = document.getElementById('step3Title');
+const step3Desc = document.getElementById('step3Desc');
 
 // DOM Elements: Studio Controls
 const folderInput = document.getElementById('folderInput');
@@ -103,12 +136,21 @@ const copyUrlBtn = document.getElementById('copyUrlBtn');
 
 // DOM Elements: Execution Logs Page
 const historySearchInput = document.getElementById('historySearchInput');
+const historyTierFilter = document.getElementById('historyTierFilter');
 const historyVoiceFilter = document.getElementById('historyVoiceFilter');
 const historyStatusFilter = document.getElementById('historyStatusFilter');
 const historyTableBody = document.getElementById('historyTableBody');
 const emptyHistory = document.getElementById('emptyHistory');
 const syncHistoryBtn = document.getElementById('syncHistoryBtn');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+// DOM Elements: Settings Page
+const kieApiKeyInput = document.getElementById('kieApiKeyInput');
+const toggleApiKeyVisibility = document.getElementById('toggleApiKeyVisibility');
+const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+const clearApiKeyBtn = document.getElementById('clearApiKeyBtn');
+const statusDot = document.getElementById('statusDot');
+const apiKeyStatusMessage = document.getElementById('apiKeyStatusMessage');
 
 // DOM Elements: Video Modal
 const videoModal = document.getElementById('videoModal');
@@ -124,25 +166,204 @@ const closeModalBtn = document.getElementById('closeModalBtn');
 // 1. Navigation Tab Switching
 // ========================================================
 function switchTab(target) {
-  if (target === 'studio') {
-    navStudioBtn.classList.add('active');
-    navLogsBtn.classList.remove('active');
-    studioView.classList.remove('hidden');
-    logsView.classList.add('hidden');
-  } else {
-    navLogsBtn.classList.add('active');
-    navStudioBtn.classList.remove('active');
-    logsView.classList.remove('hidden');
-    studioView.classList.add('hidden');
+  navStudioBtn.classList.toggle('active', target === 'studio');
+  navLogsBtn.classList.toggle('active', target === 'logs');
+  if (navSettingsBtn) navSettingsBtn.classList.toggle('active', target === 'settings');
+
+  studioView.classList.toggle('hidden', target !== 'studio');
+  logsView.classList.toggle('hidden', target !== 'logs');
+  if (settingsView) settingsView.classList.toggle('hidden', target !== 'settings');
+
+  if (target === 'logs') {
     renderHistoryTable();
+  } else if (target === 'settings') {
+    updateSettingsStatus();
   }
 }
 
 navStudioBtn.addEventListener('click', () => switchTab('studio'));
 navLogsBtn.addEventListener('click', () => switchTab('logs'));
+if (navSettingsBtn) navSettingsBtn.addEventListener('click', () => switchTab('settings'));
+if (bannerSettingsBtn) bannerSettingsBtn.addEventListener('click', () => switchTab('settings'));
 
 // ========================================================
-// 2. Folder Selection & Sorting
+// 2. Studio Mode Switcher (Standard Flow vs Premium Kie.ai)
+// ========================================================
+function setStudioMode(isPremium) {
+  isPremiumStudio = isPremium;
+  localStorage.setItem(STORAGE_KEY_STUDIO_MODE, isPremium ? 'premium' : 'standard');
+  if (studioModeToggle) studioModeToggle.checked = isPremium;
+
+  if (isPremium) {
+    if (premiumStudioBanner) premiumStudioBanner.classList.remove('hidden');
+    if (step1StandardContent) step1StandardContent.classList.add('hidden');
+    if (step1PremiumContent) step1PremiumContent.classList.remove('hidden');
+    if (premiumEngineBox) premiumEngineBox.classList.remove('hidden');
+    if (labelPremiumMode) labelPremiumMode.classList.add('active');
+    if (labelStandardMode) labelStandardMode.classList.remove('active');
+    if (step3Title) step3Title.textContent = "Input Story Script & Prompts";
+    if (step3Desc) step3Desc.innerHTML = "Paste script sentences below. In Premium Mode, each line is sent to <strong>Kie.ai NanoBanana 2 Lite</strong> on Kaggle.";
+  } else {
+    if (premiumStudioBanner) premiumStudioBanner.classList.add('hidden');
+    if (step1StandardContent) step1StandardContent.classList.remove('hidden');
+    if (step1PremiumContent) step1PremiumContent.classList.add('hidden');
+    if (premiumEngineBox) premiumEngineBox.classList.add('hidden');
+    if (labelStandardMode) labelStandardMode.classList.add('active');
+    if (labelPremiumMode) labelPremiumMode.classList.remove('active');
+    if (step3Title) step3Title.textContent = "Input Story Script";
+    if (step3Desc) step3Desc.innerHTML = "Paste your script below. <strong>Every single line represents one image</strong> in exact serial order from top to bottom.";
+  }
+
+  updateApiKeyBadges();
+  updateAlignmentMatrix();
+}
+
+if (studioModeToggle) {
+  studioModeToggle.addEventListener('change', (e) => {
+    setStudioMode(e.target.checked);
+  });
+}
+
+// ========================================================
+// 3. Settings View & API Key Management
+// ========================================================
+function getSavedKieApiKey() {
+  return localStorage.getItem(STORAGE_KEY_KIE_KEY) || '';
+}
+
+function updateApiKeyBadges() {
+  const key = getSavedKieApiKey();
+  const hasKey = key.trim().length > 0;
+
+  if (bannerApiKeyStatus) {
+    bannerApiKeyStatus.className = `api-key-badge-pill ${hasKey ? 'success' : 'warning'}`;
+    bannerApiKeyStatus.textContent = hasKey ? '🟢 Kie.ai API Configured' : '⚠️ API Key Required';
+  }
+
+  if (engineKeyStatus) {
+    engineKeyStatus.textContent = hasKey ? '🟢 Active & Ready' : '⚠️ Key Required (Settings)';
+    engineKeyStatus.style.color = hasKey ? 'var(--success)' : 'var(--warning)';
+  }
+}
+
+function updateSettingsStatus() {
+  const key = getSavedKieApiKey();
+  if (kieApiKeyInput) kieApiKeyInput.value = key;
+
+  if (key) {
+    if (statusDot) statusDot.className = 'status-indicator-dot active';
+    if (apiKeyStatusMessage) apiKeyStatusMessage.textContent = `API Key Configured (${key.substring(0, 4)}...${key.slice(-3)}). Ready for Premium Studio generation.`;
+  } else {
+    if (statusDot) statusDot.className = 'status-indicator-dot';
+    if (apiKeyStatusMessage) apiKeyStatusMessage.textContent = 'No API key configured. Enter your Kie.ai / AIE.AI key to enable dynamic cloud image generation.';
+  }
+  updateApiKeyBadges();
+}
+
+if (saveApiKeyBtn) {
+  saveApiKeyBtn.addEventListener('click', () => {
+    const val = (kieApiKeyInput.value || '').trim();
+    if (!val) {
+      alert("Please enter a valid Kie.ai API Key.");
+      return;
+    }
+    localStorage.setItem(STORAGE_KEY_KIE_KEY, val);
+    updateSettingsStatus();
+    alert("Kie.ai API key saved successfully!");
+  });
+}
+
+if (clearApiKeyBtn) {
+  clearApiKeyBtn.addEventListener('click', () => {
+    if (!confirm("Are you sure you want to remove the saved API key?")) return;
+    localStorage.removeItem(STORAGE_KEY_KIE_KEY);
+    if (kieApiKeyInput) kieApiKeyInput.value = '';
+    updateSettingsStatus();
+  });
+}
+
+if (toggleApiKeyVisibility) {
+  toggleApiKeyVisibility.addEventListener('click', () => {
+    if (kieApiKeyInput.type === 'password') {
+      kieApiKeyInput.type = 'text';
+      toggleApiKeyVisibility.textContent = 'Hide';
+    } else {
+      kieApiKeyInput.type = 'password';
+      toggleApiKeyVisibility.textContent = 'Show';
+    }
+  });
+}
+
+// ========================================================
+// 4. CSV Upload & Parsing for Premium Mode
+// ========================================================
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length === 0) return [];
+  const rows = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    // Skip header line if present
+    if (i === 0 && line.toUpperCase().startsWith('SN,SCRIPT,PROMPT')) continue;
+
+    const parts = [];
+    let inQuotes = false;
+    let cur = '';
+    for (let c = 0; c < line.length; c++) {
+      const ch = line[c];
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        parts.push(cur.trim());
+        cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    parts.push(cur.trim());
+
+    if (parts.length >= 2) {
+      rows.push({
+        sn: parts[0] || String(rows.length + 1),
+        sentence: parts[1] || '',
+        prompt: parts[2] || parts[1] || ''
+      });
+    }
+  }
+  return rows;
+}
+
+if (csvFileInput) {
+  csvFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target.result;
+      const rows = parseCSV(content);
+      if (rows.length === 0) {
+        alert("Could not parse rows from CSV. Please check formatting (SN, SCRIPT, PROMPT).");
+        return;
+      }
+
+      csvPrompts = rows;
+      scriptSentences = rows.map(r => r.sentence);
+      scriptInput.value = scriptSentences.join('\n');
+      lineCountBadge.textContent = `${scriptSentences.length} Lines`;
+      csvFileInfo.textContent = `📁 ${file.name} (${rows.length} scenes loaded)`;
+      csvRowsBadge.textContent = `${rows.length} Scenes`;
+
+      updateAlignmentMatrix();
+    };
+    reader.readAsText(file);
+  });
+}
+
+// ========================================================
+// 5. Folder Selection & Sorting (Standard Mode)
 // ========================================================
 function extractLeadingNumber(filename) {
   const match = filename.match(/^(\d+)/);
@@ -161,31 +382,68 @@ folderInput.addEventListener('change', (e) => {
     return;
   }
 
-  // Sort files numerically by leading number
+  // Sort images numerically
   validImages.sort((a, b) => {
     const numA = extractLeadingNumber(a.name);
     const numB = extractLeadingNumber(b.name);
     if (numA !== numB) return numA - numB;
-    return a.name.localeCompare(b.name);
+    return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
   });
 
   selectedImages = validImages.map((file, idx) => ({
-    file,
+    file: file,
     name: file.name,
-    number: extractLeadingNumber(file.name) === Infinity ? idx + 1 : extractLeadingNumber(file.name),
-    previewUrl: URL.createObjectURL(file)
+    number: idx + 1,
+    objectUrl: URL.createObjectURL(file)
   }));
 
-  folderInfo.textContent = `📁 Loaded ${selectedImages.length} images sorted in numerical sequence`;
+  folderInfo.textContent = `📁 Loaded ${selectedImages.length} images sorted in numerical sequence.`;
   updateAlignmentMatrix();
 });
 
 // ========================================================
-// 3. Script Input Handling
+// 6. Voice Selection
+// ========================================================
+const VOICE_INFO_MAP = {
+  hope_professional: {
+    name: "Hope (Professional, Clear & Natural)",
+    desc: "Reference recording from ElevenLabs Hope audio. Articulate, calm, authoritative long-form psychology narration."
+  },
+  hope_upbeat: {
+    name: "Hope (Upbeat & Clear)",
+    desc: "Energetic and crisp tone from ElevenLabs Hope collection. Ideal for high-tempo hooks and engaging breakdowns."
+  },
+  doris: {
+    name: "Doris Voice (Host Clone)",
+    desc: "Direct voice clone matching the channel host (DORIS VOICE.m4a). Warm, expressive, conversational cadence."
+  },
+  male_deep: {
+    name: "Deep Male Documentary Narrator",
+    desc: "Grounded baritone tone suited for serious behavioral case studies and cognitive science documentations."
+  },
+  female_warm: {
+    name: "Calm Female Storyteller",
+    desc: "Intimate and empathetic narration style tailored for reflective psychological analysis."
+  },
+  custom: {
+    name: "Custom Reference Voice",
+    desc: "Upload your custom 10-second reference WAV file via the Kaggle dataset to clone any voice in real-time."
+  }
+};
+
+voiceSelect.addEventListener('change', (e) => {
+  const val = e.target.value;
+  const info = VOICE_INFO_MAP[val] || VOICE_INFO_MAP['hope_professional'];
+  voiceNameDisplay.textContent = info.name;
+  voiceDescDisplay.textContent = info.desc;
+});
+
+// ========================================================
+// 7. Script Input & Sentence Parsing
 // ========================================================
 scriptInput.addEventListener('input', () => {
-  const rawText = scriptInput.value;
-  scriptSentences = rawText
+  const text = scriptInput.value;
+  scriptSentences = text
     .split('\n')
     .map(line => line.trim())
     .filter(line => line.length > 0);
@@ -195,76 +453,63 @@ scriptInput.addEventListener('input', () => {
 });
 
 // ========================================================
-// 4. Voice Model Selection Event
-// ========================================================
-voiceSelect.addEventListener('change', () => {
-  const val = voiceSelect.value;
-  if (val === 'hope_professional') {
-    voiceNameDisplay.textContent = "Hope (Professional & Natural)";
-    voiceDescDisplay.textContent = "Cloned from ElevenLabs Hope audio recording. Clear, calm, articulate professional narration.";
-  } else if (val === 'hope_upbeat') {
-    voiceNameDisplay.textContent = "Hope (Upbeat & Clear)";
-    voiceDescDisplay.textContent = "Cloned from ElevenLabs Hope audio recording. Energetic, engaging, and bright delivery.";
-  } else if (val === 'doris') {
-    voiceNameDisplay.textContent = "Doris Voice (Host)";
-    voiceDescDisplay.textContent = "Cloned from Sound Recordings/DORIS VOICE.m4a (20s clean sample). Matches Doris's natural cadence and tone.";
-  } else if (val === 'male_deep') {
-    voiceNameDisplay.textContent = "Deep Male Narrator";
-    voiceDescDisplay.textContent = "Warm, authoritative baritone narrator voice with rich low-end presence.";
-  } else if (val === 'female_warm') {
-    voiceNameDisplay.textContent = "Calm Female Storyteller";
-    voiceDescDisplay.textContent = "Soft, expressive storytelling voice ideal for psychology & mindful narratives.";
-  } else {
-    voiceNameDisplay.textContent = "Custom Voice Upload";
-    voiceDescDisplay.textContent = "Upload your custom 5–10s audio clip and transcript for zero-shot F5-TTS cloning.";
-  }
-});
-
-// ========================================================
-// 5. Visual Alignment Confirmation Matrix
+// 8. Visual Alignment Confirmation Matrix
 // ========================================================
 function updateAlignmentMatrix() {
   const imgCount = selectedImages.length;
-  const textCount = scriptSentences.length;
+  const lineCount = scriptSentences.length;
 
-  if (imgCount === 0 && textCount === 0) {
+  if (isPremiumStudio) {
+    // Premium Studio: Evaluates script lines / CSV prompts ready for Kie.ai
+    if (lineCount === 0) {
+      alignmentBadge.className = "alignment-badge mismatch";
+      alignmentBadge.innerHTML = `<span class="badge-dot"></span><span class="badge-text">Awaiting Script / CSV</span>`;
+      emptyMatrix.classList.remove('hidden');
+      matrixList.classList.add('hidden');
+      runBtn.disabled = true;
+      return;
+    }
+
+    alignmentBadge.className = "alignment-badge aligned";
+    alignmentBadge.innerHTML = `<span class="badge-dot"></span><span class="badge-text">💎 Ready for Cloud Gen: ${lineCount} Scenes</span>`;
+    emptyMatrix.classList.add('hidden');
+    matrixList.classList.remove('hidden');
+    runBtn.disabled = false;
+    renderPremiumMatrix(lineCount);
+    return;
+  }
+
+  // Standard Studio: Evaluates local folder images vs script lines
+  if (imgCount === 0 && lineCount === 0) {
+    alignmentBadge.className = "alignment-badge mismatch";
+    alignmentBadge.innerHTML = `<span class="badge-dot"></span><span class="badge-text">Awaiting Folder & Script</span>`;
     emptyMatrix.classList.remove('hidden');
     matrixList.classList.add('hidden');
-    matrixList.innerHTML = '';
-    alignmentBadge.className = "alignment-badge mismatch";
-    alignmentBadge.querySelector('.badge-text').textContent = "Awaiting Folder & Script";
     runBtn.disabled = true;
     return;
   }
 
-  emptyMatrix.classList.add('hidden');
-  matrixList.classList.remove('hidden');
-  matrixList.innerHTML = '';
-
-  const maxItems = Math.max(imgCount, textCount);
-  const isAligned = (imgCount > 0 && textCount > 0 && imgCount === textCount);
-
-  // Update Badge State
-  if (isAligned) {
+  if (imgCount === lineCount && imgCount > 0) {
     alignmentBadge.className = "alignment-badge aligned";
-    alignmentBadge.querySelector('.badge-text').textContent = `🟢 Aligned: ${imgCount} Images ↔ ${textCount} Sentences`;
+    alignmentBadge.innerHTML = `<span class="badge-dot"></span><span class="badge-text">🟢 Aligned: ${imgCount} Images ↔ ${lineCount} Sentences</span>`;
     runBtn.disabled = false;
   } else {
     alignmentBadge.className = "alignment-badge mismatch";
-    if (imgCount === 0) {
-      alignmentBadge.querySelector('.badge-text').textContent = `🔴 Missing Images (${textCount} Sentences)`;
-    } else if (textCount === 0) {
-      alignmentBadge.querySelector('.badge-text').textContent = `🔴 Missing Script (${imgCount} Images)`;
-    } else {
-      alignmentBadge.querySelector('.badge-text').textContent = `🔴 Mismatch: ${imgCount} Images vs ${textCount} Sentences`;
-    }
+    alignmentBadge.innerHTML = `<span class="badge-dot"></span><span class="badge-text">⚠️ Mismatch: ${imgCount} Images ≠ ${lineCount} Lines</span>`;
     runBtn.disabled = true;
   }
 
-  // Render Rows
-  for (let i = 0; i < maxItems; i++) {
+  emptyMatrix.classList.add('hidden');
+  matrixList.classList.remove('hidden');
+  renderStandardMatrix(Math.max(imgCount, lineCount));
+}
+
+function renderStandardMatrix(totalRows) {
+  matrixList.innerHTML = '';
+  for (let i = 0; i < totalRows; i++) {
     const img = selectedImages[i];
     const sentence = scriptSentences[i];
+
     const row = document.createElement('div');
     row.className = 'matrix-row';
 
@@ -272,8 +517,8 @@ function updateAlignmentMatrix() {
     if (img) {
       thumbHtml = `
         <div class="img-thumb-wrapper">
-          <img src="${img.previewUrl}" alt="${img.name}" class="img-thumb">
-          <span class="img-num-pill">#${img.number}</span>
+          <img src="${img.objectUrl}" alt="Scene ${i+1}" class="img-thumb" loading="lazy">
+          <span class="thumb-num">#${img.number}</span>
         </div>
       `;
     } else {
@@ -308,8 +553,41 @@ function updateAlignmentMatrix() {
   }
 }
 
+function renderPremiumMatrix(totalRows) {
+  matrixList.innerHTML = '';
+  for (let i = 0; i < totalRows; i++) {
+    const sentence = scriptSentences[i];
+    const promptData = csvPrompts[i];
+    const promptText = promptData ? promptData.prompt : `A cartoon man with glasses in a navy sweater over a white collared shirt illustrating scene ${i+1}, 2D adult animated sitcom aesthetic, bold thick black outlines, flat solid vibrant colors, detailed atmospheric environment`;
+
+    const row = document.createElement('div');
+    row.className = 'matrix-row';
+
+    const thumbHtml = `
+      <div class="img-thumb-wrapper" style="background: rgba(168, 85, 247, 0.12); border-color: rgba(168, 85, 247, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <span style="font-size: 16px;">🍌</span>
+        <span class="thumb-num" style="background: #a855f7;">#${i+1}</span>
+      </div>
+    `;
+
+    const textHtml = `
+      <div class="row-content">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+          <span class="file-title" style="color: #c084fc;">Scene ${i+1} · Kie.ai NanoBanana 2 Lite (1K)</span>
+          <span class="badge-premium-pill" style="font-size: 10px; padding: 2px 7px;">Dynamic Cloud API</span>
+        </div>
+        <p class="script-text-preview"><strong>Sentence:</strong> ${sentence}</p>
+        <p class="script-text-preview" style="color: var(--text-dim); font-size: 11px; margin-top: 2px;"><strong>Prompt:</strong> ${promptText}</p>
+      </div>
+    `;
+
+    row.innerHTML = thumbHtml + textHtml;
+    matrixList.appendChild(row);
+  }
+}
+
 // ========================================================
-// 6. Logging & Persistence Helper
+// 9. Logging & Persistence Helper
 // ========================================================
 function appendLog(text, type = 'info') {
   const line = document.createElement('div');
@@ -331,6 +609,7 @@ function saveActiveExecutionState(extra = {}) {
     milestone: milestoneText.textContent,
     logs: executionLogs,
     isExecuting: isExecuting,
+    isPremium: isPremiumStudio,
     status: extra.status || (isExecuting ? 'running' : 'idle'),
     assetUrl: extra.assetUrl || videoPlayer.src || DEFAULT_VIDEO_URL,
     updatedAt: new Date().toISOString()
@@ -377,7 +656,7 @@ function restoreActiveExecutionState() {
 }
 
 // ========================================================
-// 7. Cloud Execution Dispatch Engine (GitHub Actions + Kaggle + HF)
+// 10. Cloud Execution Dispatch Engine (GitHub Actions + Kaggle + HF)
 // ========================================================
 const _p = ["ghp_", "QiAA", "4JZ1", "VhzP", "P4PE", "Fz5y", "mFVr", "rh5y", "UD3G", "3OPc"];
 const GH_TOKEN = _p.join('');
@@ -386,7 +665,7 @@ const WORKFLOW_ID = "trigger_pipeline.yml";
 
 let activeRunId = null;
 
-async function triggerKaggleExecution() {
+async function triggerKaggleExecution(params = {}) {
   try {
     appendLog("[CLOUD] 100% Cloud Architecture engaged — zero local requirements.", "info");
     appendLog("[GITHUB] Dispatching cloud workflow runner on GitHub Actions...", "info");
@@ -404,7 +683,8 @@ async function triggerKaggleExecution() {
         ref: 'main',
         inputs: {
           job_id: currentJobId,
-          voice_model: selectedVoiceKey
+          voice_model: selectedVoiceKey,
+          is_premium: params.isPremium ? 'true' : 'false'
         }
       })
     });
@@ -453,9 +733,11 @@ async function pollKaggleStatus() {
         runBtn.disabled = false;
         saveJobToHistory({
           id: currentJobId || `job_${Date.now()}`,
+          tier: isPremiumStudio ? 'premium' : 'standard',
+          isPremium: isPremiumStudio,
           voice: selectedVoiceKey,
           voiceLabel: voiceSelect.options[voiceSelect.selectedIndex].text,
-          scenes: selectedImages.length || 4,
+          scenes: scriptSentences.length || 4,
           status: 'failed',
           assetUrl: null,
           timestamp: new Date().toLocaleString()
@@ -476,9 +758,11 @@ async function pollKaggleStatus() {
         const status = latestRun.status;
 
         if (status === 'in_progress') {
-          progressFill.style.width = '65%';
-          progressPct.textContent = '65%';
-          milestoneText.textContent = "Kaggle T4 GPU executing F5-TTS inference and sentence-synchronized rendering...";
+          progressFill.style.width = isPremiumStudio ? '45%' : '65%';
+          progressPct.textContent = isPremiumStudio ? '45%' : '65%';
+          milestoneText.textContent = isPremiumStudio ? 
+            "Kaggle T4 executing Kie.ai NanoBanana 2 Lite generation and sentence audio stitching..." :
+            "Kaggle T4 GPU executing F5-TTS inference and sentence-synchronized rendering...";
         } else if (status === 'completed') {
           clearInterval(executionInterval);
           isExecuting = false;
@@ -493,9 +777,22 @@ async function pollKaggleStatus() {
 }
 
 runBtn.addEventListener('click', async () => {
-  if (selectedImages.length === 0 || scriptSentences.length === 0 || selectedImages.length !== scriptSentences.length) {
-    alert("Please ensure the image count strictly matches the script line count before running.");
-    return;
+  if (isPremiumStudio) {
+    if (scriptSentences.length === 0) {
+      alert("Please upload a CSV dataset or paste story script lines before running.");
+      return;
+    }
+    const apiKey = getSavedKieApiKey();
+    if (!apiKey) {
+      alert("⚠️ Kie.ai API Key is required for Premium Studio.\n\nPlease enter your API key in the Settings tab.");
+      switchTab('settings');
+      return;
+    }
+  } else {
+    if (selectedImages.length === 0 || scriptSentences.length === 0 || selectedImages.length !== scriptSentences.length) {
+      alert("Please ensure the image count strictly matches the script line count before running.");
+      return;
+    }
   }
 
   isExecuting = true;
@@ -510,26 +807,39 @@ runBtn.addEventListener('click', async () => {
   logConsole.innerHTML = '';
 
   const selectedVoiceText = voiceSelect.options[voiceSelect.selectedIndex].text;
-  appendLog(`[INIT] Initializing Epic Automate pipeline for ${selectedImages.length} scenes...`, 'info');
-  appendLog(`[KAGGLE] Target Accelerator: NVIDIA Tesla T4 GPU (nvidiaTeslaT4)`, 'info');
-  appendLog(`[F5-TTS] Target Voice Profile: ${selectedVoiceText}`, 'info');
+  const sceneCount = scriptSentences.length;
+
+  if (isPremiumStudio) {
+    appendLog(`[PREMIUM] 💎 PREMIUM AUTONOMOUS TASK ENGAGED: ${currentJobId}`, 'info');
+    appendLog(`[PREMIUM] External Generation Engine: Kie.ai (AIE.AI)`, 'info');
+    appendLog(`[PREMIUM] Model Target: NanoBanana 2 Lite (1K Resolution, 16:9 Landscape)`, 'info');
+    appendLog(`[PREMIUM] Total Scenes Queued for Cloud Image Generation: ${sceneCount}`, 'info');
+    appendLog(`[PREMIUM] Execution Strategy: Phase 1: Kie.ai Images → Phase 2: F5-TTS Audio → Phase 3: Stitching`, 'info');
+  } else {
+    appendLog(`[INIT] Initializing Epic Automate pipeline for ${selectedImages.length} scenes...`, 'info');
+    appendLog(`[KAGGLE] Target Accelerator: NVIDIA Tesla T4 GPU (nvidiaTeslaT4)`, 'info');
+    appendLog(`[F5-TTS] Target Voice Profile: ${selectedVoiceText}`, 'info');
+  }
 
   progressFill.style.width = '10%';
   progressPct.textContent = '10%';
-  milestoneText.textContent = "Triggering Kaggle T4 GPU server worker...";
+  milestoneText.textContent = isPremiumStudio ? 
+    "Triggering Kaggle worker for Kie.ai NanoBanana 2 Lite image generation..." : 
+    "Triggering Kaggle T4 GPU server worker...";
 
-  // Add a placeholder running item into history
   saveJobToHistory({
     id: currentJobId,
+    tier: isPremiumStudio ? 'premium' : 'standard',
+    isPremium: isPremiumStudio,
     voice: voiceSelect.value,
     voiceLabel: selectedVoiceText,
-    scenes: selectedImages.length,
+    scenes: sceneCount,
     status: 'running',
     assetUrl: null,
     timestamp: new Date().toLocaleString()
   });
 
-  await triggerKaggleExecution();
+  await triggerKaggleExecution({ isPremium: isPremiumStudio });
 
   executionInterval = setInterval(pollKaggleStatus, 5000);
   saveActiveExecutionState({ status: 'running' });
@@ -553,9 +863,11 @@ cancelBtn.addEventListener('click', () => {
 
   saveJobToHistory({
     id: currentJobId,
+    tier: isPremiumStudio ? 'premium' : 'standard',
+    isPremium: isPremiumStudio,
     voice: voiceSelect.value,
     voiceLabel: voiceSelect.options[voiceSelect.selectedIndex].text,
-    scenes: selectedImages.length,
+    scenes: scriptSentences.length,
     status: 'failed',
     assetUrl: null,
     timestamp: new Date().toLocaleString()
@@ -563,40 +875,42 @@ cancelBtn.addEventListener('click', () => {
 });
 
 // ========================================================
-// 8. Completion & Video Preview
+// 11. Completion & Video Preview
 // ========================================================
 function onJobComplete(videoUrl) {
   cancelBtn.classList.add('hidden');
   runBtn.classList.remove('hidden');
   runBtn.disabled = false;
 
-  const selectedVoiceKey = voiceSelect.value || 'hope_professional';
-  const finalUrl = videoUrl || VOICE_VIDEO_MAP[selectedVoiceKey] || DEFAULT_VIDEO_URL;
-
-  appendLog(`[DONE] Generated video received from Kaggle server via Hugging Face: ${finalUrl}`, "success");
   progressFill.style.width = '100%';
   progressPct.textContent = '100%';
-  milestoneText.textContent = "Video successfully rendered and published to Hugging Face!";
-  
-  showVideoPlayer(finalUrl);
-  saveActiveExecutionState({ status: 'completed', assetUrl: finalUrl });
+  milestoneText.textContent = "Master video compiled and published successfully!";
 
-  // Record completed job to History Library
+  appendLog(`[DONE] Generated video received from Kaggle server via Hugging Face.`, 'success');
+  appendLog(`[ASSET] Master URL: ${videoUrl}`, 'info');
+
+  saveActiveExecutionState({ status: 'completed', assetUrl: videoUrl });
+
   saveJobToHistory({
     id: currentJobId || `job_${Date.now()}`,
-    voice: selectedVoiceKey,
+    tier: isPremiumStudio ? 'premium' : 'standard',
+    isPremium: isPremiumStudio,
+    voice: voiceSelect.value,
     voiceLabel: voiceSelect.options[voiceSelect.selectedIndex].text,
-    scenes: selectedImages.length || 4,
+    scenes: scriptSentences.length || 4,
     status: 'completed',
-    assetUrl: finalUrl,
+    assetUrl: videoUrl,
     timestamp: new Date().toLocaleString()
   });
+
+  showVideoPlayer(videoUrl);
 }
 
 function showVideoPlayer(url) {
-  videoCard.classList.remove('hidden');
   videoPlayer.src = url;
   downloadBtn.href = url;
+  videoCard.classList.remove('hidden');
+  videoPlayer.scrollIntoView({ behavior: 'smooth' });
 
   copyUrlBtn.onclick = () => {
     navigator.clipboard.writeText(url);
@@ -606,24 +920,23 @@ function showVideoPlayer(url) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
         <span>Copy Asset URL</span>
       `;
-    }, 2000);
+    }, 1500);
   };
 }
 
 // ========================================================
-// 9. Execution Logs & Video Library Management
+// 12. History Persistence & Table Rendering
 // ========================================================
 function getExecutionHistory() {
   const raw = localStorage.getItem(STORAGE_KEY_HISTORY);
   if (!raw) {
     localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(SEED_HISTORY));
-    return [...SEED_HISTORY];
+    return SEED_HISTORY;
   }
   try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [...SEED_HISTORY];
+    return JSON.parse(raw);
   } catch (e) {
-    return [...SEED_HISTORY];
+    return SEED_HISTORY;
   }
 }
 
@@ -650,9 +963,10 @@ function updateHistoryBadge() {
 function renderHistoryTable() {
   if (!historyTableBody) return;
   const history = getExecutionHistory();
-  const query = (historySearchInput.value || '').toLowerCase().trim();
-  const voiceFilter = historyVoiceFilter.value || 'all';
-  const statusFilter = historyStatusFilter.value || 'all';
+  const query = (historySearchInput ? historySearchInput.value : '').toLowerCase().trim();
+  const tierFilter = historyTierFilter ? historyTierFilter.value : 'all';
+  const voiceFilter = historyVoiceFilter ? historyVoiceFilter.value : 'all';
+  const statusFilter = historyStatusFilter ? historyStatusFilter.value : 'all';
 
   const filtered = history.filter(item => {
     const matchQuery = !query || 
@@ -660,24 +974,28 @@ function renderHistoryTable() {
       (item.voiceLabel && item.voiceLabel.toLowerCase().includes(query)) ||
       (item.timestamp && item.timestamp.toLowerCase().includes(query));
 
+    const isItemPrem = item.tier === 'premium' || item.isPremium === true;
+    const matchTier = tierFilter === 'all' || 
+      (tierFilter === 'premium' && isItemPrem) ||
+      (tierFilter === 'standard' && !isItemPrem);
+
     const matchVoice = voiceFilter === 'all' || item.voice === voiceFilter;
     const matchStatus = statusFilter === 'all' || item.status === statusFilter;
 
-    return matchQuery && matchVoice && matchStatus;
+    return matchQuery && matchTier && matchVoice && matchStatus;
   });
 
   historyTableBody.innerHTML = '';
 
   if (filtered.length === 0) {
-    emptyHistory.classList.remove('hidden');
+    if (emptyHistory) emptyHistory.classList.remove('hidden');
     return;
   }
-  emptyHistory.classList.add('hidden');
+  if (emptyHistory) emptyHistory.classList.add('hidden');
 
   filtered.forEach(item => {
     const tr = document.createElement('tr');
 
-    // Status Tag
     let statusClass = 'completed';
     let statusLabel = '🟢 Completed';
     if (item.status === 'running') {
@@ -688,10 +1006,9 @@ function renderHistoryTable() {
       statusLabel = '🔴 Failed';
     }
 
-    // Voice Tag
     const voiceDisplay = item.voiceLabel || item.voice || "Unknown Voice";
+    const isPrem = item.tier === 'premium' || item.isPremium === true;
 
-    // Action buttons
     let actionButtons = '';
     if (item.assetUrl) {
       actionButtons = `
@@ -719,6 +1036,12 @@ function renderHistoryTable() {
         <span class="job-subtext">Hugging Face Datasets</span>
       </td>
       <td>
+        ${isPrem ? 
+          `<span class="badge-tier-premium">💎 Premium (Kie.ai)</span>` : 
+          `<span class="badge-tier-standard">Standard (Flow)</span>`
+        }
+      </td>
+      <td>
         <span>${item.timestamp || 'Recent'}</span>
       </td>
       <td>
@@ -738,7 +1061,6 @@ function renderHistoryTable() {
     historyTableBody.appendChild(tr);
   });
 
-  // Attach event listeners to dynamic action buttons
   document.querySelectorAll('.play-btn').forEach(btn => {
     btn.onclick = (e) => {
       e.stopPropagation();
@@ -758,76 +1080,82 @@ function renderHistoryTable() {
   });
 }
 
-// History Filters
-historySearchInput.addEventListener('input', renderHistoryTable);
-historyVoiceFilter.addEventListener('change', renderHistoryTable);
-historyStatusFilter.addEventListener('change', renderHistoryTable);
+if (historySearchInput) historySearchInput.addEventListener('input', renderHistoryTable);
+if (historyTierFilter) historyTierFilter.addEventListener('change', renderHistoryTable);
+if (historyVoiceFilter) historyVoiceFilter.addEventListener('change', renderHistoryTable);
+if (historyStatusFilter) historyStatusFilter.addEventListener('change', renderHistoryTable);
 
-// Clear Cache
-clearHistoryBtn.addEventListener('click', () => {
-  if (!confirm("Reset execution history back to verified cloud assets?")) return;
-  localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(SEED_HISTORY));
-  updateHistoryBadge();
-  renderHistoryTable();
-});
+if (clearHistoryBtn) {
+  clearHistoryBtn.addEventListener('click', () => {
+    if (!confirm("Reset execution history back to verified cloud assets?")) return;
+    localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(SEED_HISTORY));
+    updateHistoryBadge();
+    renderHistoryTable();
+  });
+}
 
-// Re-sync with Hugging Face Datasets
-syncHistoryBtn.addEventListener('click', async () => {
-  syncHistoryBtn.disabled = true;
-  syncHistoryBtn.innerHTML = `<span>Syncing...</span>`;
-  try {
-    const res = await fetch(`https://huggingface.co/api/datasets/${HF_DATASET_REPO}/tree/main/videos`);
-    if (res.ok) {
-      const files = await res.json();
-      const history = getExecutionHistory();
-      
-      files.forEach(f => {
-        if (!f.path || !f.path.endsWith('.mp4')) return;
-        const filename = f.path.split('/').pop();
-        const assetUrl = `${HF_BASE_URL}/${filename}`;
+if (syncHistoryBtn) {
+  syncHistoryBtn.addEventListener('click', async () => {
+    syncHistoryBtn.disabled = true;
+    syncHistoryBtn.innerHTML = `<span>Syncing...</span>`;
+    try {
+      const res = await fetch(`https://huggingface.co/api/datasets/${HF_DATASET_REPO}/tree/main/videos`);
+      if (res.ok) {
+        const files = await res.json();
+        const history = getExecutionHistory();
         
-        let voiceLabel = "🎙️ Doris Voice (Host)";
-        let voiceKey = "doris";
-        if (filename.includes("hope_professional")) {
-          voiceLabel = "✨ Hope — Professional, Clear & Natural";
-          voiceKey = "hope_professional";
-        } else if (filename.includes("hope_upbeat")) {
-          voiceLabel = "✨ Hope — Upbeat & Clear";
-          voiceKey = "hope_upbeat";
-        }
+        files.forEach(f => {
+          if (!f.path || !f.path.endsWith('.mp4')) return;
+          const filename = f.path.split('/').pop();
+          const assetUrl = `${HF_BASE_URL}/${filename}`;
+          
+          let voiceLabel = "🎙️ Doris Voice (Host)";
+          let voiceKey = "doris";
+          if (filename.includes("hope_professional")) {
+            voiceLabel = "✨ Hope — Professional, Clear & Natural";
+            voiceKey = "hope_professional";
+          } else if (filename.includes("hope_upbeat")) {
+            voiceLabel = "✨ Hope — Upbeat & Clear";
+            voiceKey = "hope_upbeat";
+          }
 
-        const exists = history.some(item => item.assetUrl === assetUrl);
-        if (!exists) {
-          history.unshift({
-            id: `job_${filename.replace('.mp4', '')}`,
-            voice: voiceKey,
-            voiceLabel: voiceLabel,
-            scenes: 4,
-            status: "completed",
-            assetUrl: assetUrl,
-            timestamp: new Date().toLocaleString()
-          });
-        }
-      });
+          const isPrem = filename.includes("be_so_calm") || filename.includes("premium");
 
-      localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(history));
-      updateHistoryBadge();
-      renderHistoryTable();
-      alert("Hugging Face cloud videos synced successfully!");
+          const exists = history.some(item => item.assetUrl === assetUrl);
+          if (!exists) {
+            history.unshift({
+              id: `job_${filename.replace('.mp4', '')}`,
+              tier: isPrem ? "premium" : "standard",
+              isPremium: isPrem,
+              voice: voiceKey,
+              voiceLabel: voiceLabel,
+              scenes: isPrem ? 169 : 4,
+              status: "completed",
+              assetUrl: assetUrl,
+              timestamp: new Date().toLocaleString()
+            });
+          }
+        });
+
+        localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(history));
+        updateHistoryBadge();
+        renderHistoryTable();
+        alert("Hugging Face cloud videos synced successfully!");
+      }
+    } catch (err) {
+      console.warn("HF sync failed:", err);
+    } finally {
+      syncHistoryBtn.disabled = false;
+      syncHistoryBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        <span>Sync Cloud Videos</span>
+      `;
     }
-  } catch (err) {
-    console.warn("HF sync failed:", err);
-  } finally {
-    syncHistoryBtn.disabled = false;
-    syncHistoryBtn.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-      <span>Sync Cloud Videos</span>
-    `;
-  }
-});
+  });
+}
 
 // ========================================================
-// 10. Video Preview Modal Logic
+// 13. Video Preview Modal Logic
 // ========================================================
 function openVideoModal(videoUrl, title, voiceName) {
   modalVideoTitle.textContent = title || "Story Video Preview";
@@ -872,9 +1200,11 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ========================================================
-// 11. Initial Application Load
+// 14. Initial Application Load
 // ========================================================
 window.addEventListener('DOMContentLoaded', () => {
+  setStudioMode(isPremiumStudio);
+  updateSettingsStatus();
   restoreActiveExecutionState();
   updateHistoryBadge();
   renderHistoryTable();

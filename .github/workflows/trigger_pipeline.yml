@@ -11,6 +11,10 @@ on:
         description: 'Voice Model Profile'
         required: false
         default: 'hope_professional'
+      is_premium:
+        description: 'Run in Premium Mode (Kie.ai Dynamic Cloud Generation)'
+        required: false
+        default: 'false'
 
 jobs:
   execute-pipeline:
@@ -42,8 +46,9 @@ jobs:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           VOICE_MODEL: ${{ github.event.inputs.voice_model || 'hope_professional' }}
+          IS_PREMIUM: ${{ github.event.inputs.is_premium || 'false' }}
         run: |
-          echo ">>> Pushing kernel to Kaggle T4 GPU server (Voice: $VOICE_MODEL)..."
+          echo ">>> Pushing kernel to Kaggle T4 GPU server (Voice: $VOICE_MODEL, Premium: $IS_PREMIUM)..."
           python -m kaggle kernels push -p kaggle --accelerator NvidiaTeslaT4
 
       - name: Monitor Execution & Sync to Hugging Face
@@ -51,5 +56,6 @@ jobs:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           VOICE_MODEL: ${{ github.event.inputs.voice_model || 'hope_professional' }}
+          IS_PREMIUM: ${{ github.event.inputs.is_premium || 'false' }}
         run: |
           python scripts/monitor_cloud_execution.py

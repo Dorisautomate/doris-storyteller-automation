@@ -155,36 +155,46 @@ Batch-generate all visual frames using an interactive **Browser Agent** connecte
 
 ---
 
-### Phase 4: Web App Automation (`dorisautomate.web.app`)
+### Phase 4: Web App Automation (`dorisautomate.web.app`) & Studio Modes
 
 > [!CRITICAL]
 > **100% Cloud Web App Assembly Only**:
 > Never stitch images locally with FFmpeg on the desktop! The compilation and rendering MUST happen through the live production web app: `https://dorisautomate.web.app`.
 
-1. **Navigate**:
-   - Open **`https://dorisautomate.web.app`** in the active Chrome session.
-2. **Step 1 — Folder Ingestion**:
+The web app supports two operating studio modes accessible via the **Studio Mode Toggle** (`#studioModeToggle`):
+
+#### Mode A: Standard Studio (Local Google Flow Ingestion)
+1. **Step 1 — Folder Ingestion**:
    - Select the folder containing the downloaded scene images (`C:\Users\doris\Downloads\<Title_Folder>`).
    - Confirm the badge shows: `📁 Loaded N images sorted in numerical sequence`.
-3. **Step 2 — Voice Model Selection**:
-   - Verify **`✨ Hope — Professional, Clear & Natural (Default)`** is selected (or switch to `✨ Hope — Upbeat & Clear` / `🎙️ Doris Voice` if specified).
-4. **Step 3 — Script Ingestion**:
-   - Read the 1-sentence-per-line `.txt` file from `C:\Users\doris\Downloads\<Title_Slug>.txt`.
-   - Paste the complete text into `#scriptInput`.
-   - Confirm the line counter badge matches the image count ($N$ Lines).
-5. **Step 4 — Alignment Matrix Verification**:
-   - Inspect `#alignmentBadge`. Verify it displays:
-     `🟢 Aligned: N Images ↔ N Sentences`
-   - Ensure `#runBtn` is enabled.
-6. **Step 5 — Trigger Execution & Real-Time Cloud Tracking**:
-   - Click `#runBtn` ("Run Video Automation").
-   - Monitor the cloud execution logs and progress bar in real time until Kaggle GPU finishes rendering and Hugging Face publishes the 1080p MP4.
-   - Monitor the execution logs and progress bar in real time:
-     - `[CLOUD] 100% Cloud Architecture engaged`
-     - `[GITHUB] Dispatching cloud workflow runner on GitHub Actions`
-     - `[KAGGLE] Cloud runner spinning up Kaggle T4 GPU worker (NvidiaTeslaT4)`
-     - Poll until `[DONE] Generated video received from Kaggle server via Hugging Face`.
-   - **Immediately transition to Phase 5 upon completion**.
+2. **Step 2 — Voice Model Selection**:
+   - Verify **`✨ Hope — Professional, Clear & Natural (Default)`** is selected.
+3. **Step 3 — Script Ingestion**:
+   - Paste the complete 1-sentence-per-line `.txt` file into `#scriptInput`.
+   - Confirm the line counter matches the image count.
+4. **Step 4 — Alignment Matrix**:
+   - Verify `🟢 Aligned: N Images ↔ N Sentences` and click `#runBtn`.
+
+#### Mode B: 💎 Premium Studio (Kie.ai Dynamic Cloud Generation)
+1. **API Key Setup (Settings Tab)**:
+   - Navigate to the **Settings Tab** (`#navSettingsBtn`).
+   - Input and save the **Kie.ai (AIE.AI)** API Key (`#kieApiKeyInput`). The key is stored securely in `localStorage` under `doris_kie_api_key`.
+2. **Model Specification**:
+   - Strictly locked to **`NanoBanana 2 Lite`** (`nano-banana-2-lite`) at **1K resolution (16:9 landscape standard)**.
+3. **Step 1 — CSV Dataset Ingestion**:
+   - Upload the generated CSV (`SN, SCRIPT, PROMPT`) via `#csvFileInput` or paste into `#scriptInput`.
+   - The Visual Alignment Matrix renders prompt summaries and sentences side-by-side.
+4. **Step 2 & 3 — Voice & Execution**:
+   - Select voice profile (Default: Hope Professional).
+   - Click `#runBtn` ("Run Video Automation [PREMIUM]").
+5. **Kaggle Cloud Worker Execution**:
+   - Dispatches GitHub Actions with `is_premium: true` and forwards the API key.
+   - Kaggle executes `kaggle_executor.py` in `IS_PREMIUM` mode:
+     - **Phase 1**: Sends every prompt to Kie.ai `NanoBanana 2 Lite`, polls status, downloads 1K images, and names them sequentially: `<SN>. <Sentence>.jpg`.
+     - **Phase 2**: Synthesizes sentence audio via F5-TTS zero-shot voice cloning.
+     - **Phase 3**: Renders sentence-synced 1080p MP4 with FFmpeg and uploads to Hugging Face.
+   - Outputs live `[PREMIUM 💎]` tags and milestone updates in execution logs.
+   - History logs and table record the task with the `💎 Premium (Kie.ai)` tier badge.
 
 ---
 

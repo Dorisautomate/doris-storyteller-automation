@@ -2,3 +2,7 @@ node_modules/
 temp_build/
 *.mp3
 *.zip
+__pycache__/
+kaggle/__pycache__/
+live_*.png
+scripts/*.png

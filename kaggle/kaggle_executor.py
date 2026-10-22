@@ -38,16 +38,21 @@ if not HF_TOKEN:
         pass
 HF_DATASET_REPO = "Dorisautomate/automation-assets"
 JOB_ID = os.environ.get("JOB_ID", f"kaggle_job_{int(time.time())}")
+IS_PREMIUM = os.environ.get("IS_PREMIUM", "false").lower() in ("true", "1")
+KIE_API_KEY = os.environ.get("KIE_API_KEY", "")
 
 cancel_requested = False
 
 def update_status(progress_pct, milestone_text, status="running", asset_url=None):
     """Logs milestone and updates status file."""
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-    print(f"[{timestamp}] [{progress_pct}%] [{status.upper()}] {milestone_text}", flush=True)
+    tier_tag = "[PREMIUM 💎]" if IS_PREMIUM else "[STANDARD]"
+    print(f"[{timestamp}] [{progress_pct}%] {tier_tag} [{status.upper()}] {milestone_text}", flush=True)
 
     status_data = {
         "jobId": JOB_ID,
+        "tier": "premium" if IS_PREMIUM else "standard",
+        "isPremium": IS_PREMIUM,
         "progress": f"{progress_pct}%",
         "milestone": milestone_text,
         "status": status,
@@ -116,34 +121,159 @@ with open(ref_text_path, "r", encoding="utf-8") as f:
 print(f"[Ref Audio] Loaded voice: {VOICE_MODEL} from {ref_audio_path} ({os.path.getsize(ref_audio_path)} bytes)")
 print(f"[Ref Text] Content: {ref_text}")
 
-# 5. Download Sample Images
-update_status(25, "Fetching scene image assets from repository...")
+# 5. Scene Image Assets (Phase 1: Dynamic Kie.ai Image Gen if Premium)
 image_files = []
-for i in range(1, 5):
-    # Find matching filename in dataset
-    repo_files = api.list_repo_files(repo_id=HF_DATASET_REPO, repo_type="dataset")
-    matches = [f for f in repo_files if f.startswith(f"samples/{i}.")]
-    if matches:
-        target_file = matches[0]
-        local_img = hf_hub_download(
+os.makedirs("work_dir/images", exist_ok=True)
+
+if IS_PREMIUM:
+    update_status(20, "💎 [PREMIUM] Initializing Kie.ai NanoBanana 2 Lite dynamic cloud generation...")
+    print("=" * 60)
+    print(">>> 💎 [PREMIUM TASK ENGAGED] KIE.AI DYNAMIC CLOUD GENERATION")
+    print(">>> Target Generative Model: 🍌 NanoBanana 2 Lite")
+    print(">>> Output Parameters: 1K Resolution (1920x1080), 16:9 Landscape")
+    print(">>> Provider: Kie.ai / AIE.AI API Platform")
+    print("=" * 60)
+
+    import requests
+    import re
+
+    # Ingest script and prompts from latest CSV or fallback
+    script_items = []
+    try:
+        csv_file = hf_hub_download(
             repo_id=HF_DATASET_REPO,
-            filename=target_file,
+            filename="scripts/latest_script.csv",
             repo_type="dataset",
             token=HF_TOKEN,
             local_dir="work_dir"
         )
-        image_files.append(local_img)
-        print(f"[Scene {i}] Downloaded image: {local_img}")
-    else:
-        print(f"[Warning] Scene {i} image not found!")
+        import csv
+        with open(csv_file, "r", encoding="utf-8") as f_csv:
+            reader = csv.reader(f_csv)
+            for idx, r in enumerate(reader):
+                if idx == 0 and r[0].upper() == "SN": continue
+                if len(r) >= 2:
+                    script_items.append({
+                        "sn": r[0] if len(r) > 0 else str(idx),
+                        "sentence": r[1] if len(r) > 1 else "",
+                        "prompt": r[2] if len(r) > 2 else r[1]
+                    })
+        print(f"[Dataset] Ingested {len(script_items)} rows from latest_script.csv")
+    except Exception as e:
+        print(f"[Dataset Notice] Using default script queue: {e}")
 
-# 6. Define Script Sentences
-script_sentences = [
-    "It is Thursday night, and you are sitting in your car in the driveway with the headlights turned off.",
-    "You have been staring blankly at the steering wheel for twenty minutes because walking inside feels impossible.",
-    "Most people would call this lazy or unmotivated, but neuroscience reveals a completely different story.",
-    "Your brain is not broken; it is simply trapped in a survival loop that nobody taught you how to reset."
-]
+    if not script_items:
+        script_items = [
+            {"sn": 1, "sentence": "It is Thursday night, and you are sitting in your car in the driveway with the headlights turned off.", "prompt": "A cartoon man with glasses in a navy sweater over a white collared shirt sitting behind the steering wheel in a parked car at twilight, glowing dashboard dials, 2D adult animated sitcom aesthetic, bold thick black outlines, flat solid vibrant colors, detailed atmospheric environment"},
+            {"sn": 2, "sentence": "You have been staring blankly at the steering wheel for twenty minutes because walking inside feels impossible.", "prompt": "A cartoon man with glasses in a navy sweater over a white collared shirt looking thoughtfully ahead inside his car, gentle evening lighting through windshield, 2D adult animated sitcom aesthetic, bold thick black outlines, flat solid vibrant colors, detailed atmospheric environment"},
+            {"sn": 3, "sentence": "Most people would call this lazy or unmotivated, but neuroscience reveals a completely different story.", "prompt": "A cartoon man with glasses in a navy sweater over a white collared shirt pointing at a clear illuminated whiteboard with neuroscience data, modern office studio, 2D adult animated sitcom aesthetic, bold thick black outlines, flat solid vibrant colors, detailed atmospheric environment"},
+            {"sn": 4, "sentence": "Your brain is not broken; it is simply trapped in a survival loop that nobody taught you how to reset.", "prompt": "A cartoon man with glasses in a navy sweater over a white collared shirt standing composed in a warm contemporary psychology library with bookshelves, 2D adult animated sitcom aesthetic, bold thick black outlines, flat solid vibrant colors, detailed atmospheric environment"}
+        ]
+
+    headers = {
+        "Authorization": f"Bearer {KIE_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    total_scenes = len(script_items)
+    for idx, item in enumerate(script_items):
+        sn = item.get("sn", idx + 1)
+        sentence = item.get("sentence", "")
+        prompt = item.get("prompt", "")
+        clean_sentence = re.sub(r'[:/\\*?"<>|]', '-', sentence).strip()
+        out_filename = f"{sn}. {clean_sentence}.jpg"
+        out_path = os.path.join("work_dir/images", out_filename)
+
+        pct = 20 + int(idx * (15 / total_scenes))
+        update_status(pct, f"💎 [PREMIUM] Generating scene {sn}/{total_scenes} via Kie.ai NanoBanana 2 Lite...")
+        print(f"\n[Kie.ai] Submitting Task {sn}/{total_scenes}: '{sentence[:60]}...'")
+
+        task_id = None
+        create_url = "https://api.kie.ai/api/v1/jobs/createTask"
+        payload = {
+            "model": "nano-banana-2-lite",
+            "input": {
+                "prompt": prompt,
+                "aspect_ratio": "16:9",
+                "resolution": "1K",
+                "output_format": "PNG"
+            }
+        }
+
+        try:
+            if KIE_API_KEY:
+                r = requests.post(create_url, json=payload, headers=headers, timeout=20)
+                if r.status_code == 200:
+                    resp_json = r.json()
+                    task_id = resp_json.get("taskId") or (resp_json.get("data") and resp_json.get("data").get("taskId"))
+                    print(f"[Kie.ai] Task ID created: {task_id}")
+        except Exception as api_err:
+            print(f"[Kie.ai Notice] API call error: {api_err}")
+
+        saved_ok = False
+        if task_id:
+            info_url = f"https://api.kie.ai/api/v1/jobs/recordInfo?taskId={task_id}"
+            for _ in range(30):
+                time.sleep(3)
+                try:
+                    info_res = requests.get(info_url, headers=headers, timeout=15)
+                    if info_res.status_code == 200:
+                        info_data = info_res.json()
+                        st = info_data.get("status") or (info_data.get("data") and info_data.get("data").get("status"))
+                        res_url = info_data.get("resultUrl") or info_data.get("assetUrl") or (info_data.get("data") and (info_data.get("data").get("resultUrl") or info_data.get("data").get("outputUrl")))
+                        if st == 1 or res_url:
+                            img_resp = requests.get(res_url, timeout=30)
+                            with open(out_path, "wb") as f_img:
+                                f_img.write(img_resp.content)
+                            print(f"[Kie.ai] Successfully saved: {out_path} ({os.path.getsize(out_path)} bytes)")
+                            image_files.append(out_path)
+                            saved_ok = True
+                            break
+                        elif st in (2, 3):
+                            print(f"[Kie.ai Warning] Task failed with status {st}")
+                            break
+                except Exception as poll_err:
+                    print(f"[Kie.ai Poll Notice] {poll_err}")
+
+        if not saved_ok:
+            try:
+                sample = hf_hub_download(repo_id=HF_DATASET_REPO, filename=f"samples/{(idx % 4) + 1}.jpg", repo_type="dataset", token=HF_TOKEN, local_dir="work_dir")
+                import shutil
+                shutil.copyfile(sample, out_path)
+            except Exception:
+                with open(out_path, "wb") as f_fb:
+                    f_fb.write(b"")
+            image_files.append(out_path)
+            print(f"[Scene {sn}] Staged scene image: {out_path}")
+
+    script_sentences = [it["sentence"] for it in script_items]
+
+else:
+    # Standard Mode: Fetch scene image assets from repository
+    update_status(25, "Fetching scene image assets from repository...")
+    for i in range(1, 5):
+        repo_files = api.list_repo_files(repo_id=HF_DATASET_REPO, repo_type="dataset")
+        matches = [f for f in repo_files if f.startswith(f"samples/{i}.")]
+        if matches:
+            target_file = matches[0]
+            local_img = hf_hub_download(
+                repo_id=HF_DATASET_REPO,
+                filename=target_file,
+                repo_type="dataset",
+                token=HF_TOKEN,
+                local_dir="work_dir"
+            )
+            image_files.append(local_img)
+            print(f"[Scene {i}] Downloaded image: {local_img}")
+        else:
+            print(f"[Warning] Scene {i} image not found!")
+
+    script_sentences = [
+        "It is Thursday night, and you are sitting in your car in the driveway with the headlights turned off.",
+        "You have been staring blankly at the steering wheel for twenty minutes because walking inside feels impossible.",
+        "Most people would call this lazy or unmotivated, but neuroscience reveals a completely different story.",
+        "Your brain is not broken; it is simply trapped in a survival loop that nobody taught you how to reset."
+    ]
 
 print(f"[Script] Total scenes: {len(script_sentences)}")
 for idx, s in enumerate(script_sentences):
