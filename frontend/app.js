@@ -800,6 +800,7 @@ async function triggerKaggleExecution(params = {}) {
     appendLog("[GITHUB] Dispatching cloud workflow runner on GitHub Actions...", "info");
 
     const selectedVoiceKey = voiceSelect.value || 'hope_professional';
+    const savedKieKey = localStorage.getItem('doris_kie_api_key') || '12b5f2a14a89e0b265c05e789962efc6';
 
     const res = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/${WORKFLOW_ID}/dispatches`, {
       method: 'POST',
@@ -814,7 +815,8 @@ async function triggerKaggleExecution(params = {}) {
           job_id: currentJobId,
           voice_model: selectedVoiceKey,
           is_premium: params.isPremium ? 'true' : 'false',
-          character_ref_url: DEFAULT_CHAR_REF_URL
+          character_ref_url: DEFAULT_CHAR_REF_URL,
+          kie_api_key: savedKieKey
         }
       })
     });
@@ -846,14 +848,10 @@ async function pollKaggleStatus() {
     if (hfRes.ok) {
       const hfData = await hfRes.json();
 
-      // Guard: Ignore stale previous job results during the initial 60 seconds
+      // Check if Hugging Face data belongs to the currently active job
       const isCurrentJob = hfData.jobId === currentJobId;
-      if (!isCurrentJob && elapsedSec < 60) {
-        const simPct = Math.min(10 + Math.floor(elapsedSec * 0.5), 35);
-        progressFill.style.width = `${simPct}%`;
-        progressPct.textContent = `${simPct}%`;
-        milestoneText.textContent = `Spinning up Kaggle T4 GPU worker in the cloud (${elapsedSec}s elapsed)...`;
-      } else {
+
+      if (isCurrentJob) {
         if (hfData.progress) {
           progressFill.style.width = hfData.progress;
           progressPct.textContent = hfData.progress;
@@ -866,7 +864,7 @@ async function pollKaggleStatus() {
           isExecuting = false;
           onJobComplete(hfData.assetUrl || targetVoiceUrl);
           return;
-        } else if (hfData.status === 'error' && (isCurrentJob || elapsedSec >= 60)) {
+        } else if (hfData.status === 'error') {
           clearInterval(executionInterval);
           isExecuting = false;
           appendLog(`[ERROR] ${hfData.milestone || 'Execution error reported by cloud monitor.'}`, 'error');
@@ -886,6 +884,12 @@ async function pollKaggleStatus() {
           });
           return;
         }
+      } else {
+        // Job is still initializing / waiting in Kaggle queue
+        const simPct = Math.min(10 + Math.floor(elapsedSec * 0.2), 35);
+        progressFill.style.width = `${simPct}%`;
+        progressPct.textContent = `${simPct}%`;
+        milestoneText.textContent = `Spinning up Kaggle T4 GPU worker in cloud queue (${elapsedSec}s elapsed)...`;
       }
     }
 
@@ -899,18 +903,31 @@ async function pollKaggleStatus() {
       if (latestRun) {
         activeRunId = latestRun.id;
         const status = latestRun.status;
+        const conclusion = latestRun.conclusion;
 
         if (status === 'in_progress') {
-          progressFill.style.width = isPremiumStudio ? '45%' : '65%';
-          progressPct.textContent = isPremiumStudio ? '45%' : '65%';
-          milestoneText.textContent = isPremiumStudio ? 
-            "Kaggle T4 executing Kie.ai NanoBanana 2 Lite generation and sentence audio stitching..." :
-            "Kaggle T4 GPU executing F5-TTS inference and sentence-synchronized rendering...";
+          if (!progressPct.textContent || progressPct.textContent === '0%') {
+            progressFill.style.width = isPremiumStudio ? '45%' : '65%';
+            progressPct.textContent = isPremiumStudio ? '45%' : '65%';
+          }
         } else if (status === 'completed') {
-          clearInterval(executionInterval);
-          isExecuting = false;
-          onJobComplete(targetVoiceUrl);
-          return;
+          if (conclusion === 'success') {
+            clearInterval(executionInterval);
+            isExecuting = false;
+            onJobComplete(targetVoiceUrl);
+            return;
+          } else if (conclusion === 'failure') {
+            // Only terminate if we've been running for at least 120s or received error
+            if (elapsedSec > 120) {
+              clearInterval(executionInterval);
+              isExecuting = false;
+              appendLog(`[ERROR] Cloud workflow execution failed in GitHub Actions.`, 'error');
+              cancelBtn.classList.add('hidden');
+              runBtn.classList.remove('hidden');
+              runBtn.disabled = false;
+              return;
+            }
+          }
         }
       }
     }

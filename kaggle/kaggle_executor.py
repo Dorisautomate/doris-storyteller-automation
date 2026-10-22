@@ -66,7 +66,7 @@ CHARACTER_REF_URL = os.environ.get("CHARACTER_REF_URL") or runtime_cfg.get("CHAR
 cancel_requested = False
 
 def update_status(progress_pct, milestone_text, status="running", asset_url=None):
-    """Logs milestone and updates status file."""
+    """Logs milestone, writes status file, and syncs live to Hugging Face."""
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
     tier_tag = "[PREMIUM 💎]" if IS_PREMIUM else "[STANDARD]"
     print(f"[{timestamp}] [{progress_pct}%] {tier_tag} [{status.upper()}] {milestone_text}", flush=True)
@@ -83,10 +83,23 @@ def update_status(progress_pct, milestone_text, status="running", asset_url=None
         "updatedAt": timestamp
     }
     try:
-        with open("job_status.json", "w") as f:
+        with open("job_status.json", "w", encoding="utf-8") as f:
             json.dump(status_data, f, indent=2)
     except Exception as e:
         print(f"[Warning] Failed to write local status: {e}")
+
+    if HF_TOKEN:
+        try:
+            from huggingface_hub import HfApi
+            hf_sync = HfApi(token=HF_TOKEN)
+            hf_sync.upload_file(
+                path_or_fileobj="job_status.json",
+                path_in_repo="jobs/latest_job.json",
+                repo_id=HF_DATASET_REPO,
+                repo_type="dataset"
+            )
+        except Exception:
+            pass
 
 # 3. Dynamic Installation of Packages
 update_status(5, "Verifying and installing F5-TTS runtime dependencies...")
@@ -228,8 +241,6 @@ if IS_PREMIUM:
             "input": {
                 "prompt": final_prompt,
                 "image_url": CHARACTER_REF_URL,
-                "image_urls": [CHARACTER_REF_URL],
-                "reference_image": CHARACTER_REF_URL,
                 "aspect_ratio": "16:9",
                 "resolution": "1K",
                 "output_format": "PNG"
@@ -243,30 +254,51 @@ if IS_PREMIUM:
                     resp_json = r.json()
                     task_id = resp_json.get("taskId") or (resp_json.get("data") and resp_json.get("data").get("taskId"))
                     print(f"[Kie.ai] Task ID created: {task_id}")
+                else:
+                    print(f"[Kie.ai Error] createTask failed ({r.status_code}): {r.text}")
         except Exception as api_err:
             print(f"[Kie.ai Notice] API call error: {api_err}")
 
         saved_ok = False
         if task_id:
             info_url = f"https://api.kie.ai/api/v1/jobs/recordInfo?taskId={task_id}"
-            for _ in range(30):
+            for poll_attempt in range(40):
                 time.sleep(3)
                 try:
                     info_res = requests.get(info_url, headers=headers, timeout=15)
                     if info_res.status_code == 200:
                         info_data = info_res.json()
-                        st = info_data.get("status") or (info_data.get("data") and info_data.get("data").get("status"))
-                        res_url = info_data.get("resultUrl") or info_data.get("assetUrl") or (info_data.get("data") and (info_data.get("data").get("resultUrl") or info_data.get("data").get("outputUrl")))
-                        if st == 1 or res_url:
+                        d = info_data.get("data", {})
+                        state = d.get("state")
+                        success_flag = d.get("successFlag")
+                        
+                        # Extract result URL from response.resultUrls or resultJson
+                        res_url = None
+                        urls = d.get("response", {}).get("resultUrls") or []
+                        if urls and len(urls) > 0:
+                            res_url = urls[0]
+                        elif d.get("resultJson"):
+                            try:
+                                rj = json.loads(d["resultJson"])
+                                if rj.get("resultUrls") and len(rj["resultUrls"]) > 0:
+                                    res_url = rj["resultUrls"][0]
+                            except Exception:
+                                pass
+                        if not res_url:
+                            res_url = d.get("resultUrl") or d.get("outputUrl") or info_data.get("resultUrl")
+
+                        if (state == "success" or success_flag == 1 or d.get("status") == 1) and res_url:
+                            print(f"[Kie.ai] Scene {sn} generated successfully in {(poll_attempt+1)*3}s. Downloading: {res_url}")
                             img_resp = requests.get(res_url, timeout=30)
-                            with open(out_path, "wb") as f_img:
-                                f_img.write(img_resp.content)
-                            print(f"[Kie.ai] Successfully saved: {out_path} ({os.path.getsize(out_path)} bytes)")
-                            image_files.append(out_path)
-                            saved_ok = True
-                            break
-                        elif st in (2, 3):
-                            print(f"[Kie.ai Warning] Task failed with status {st}")
+                            if img_resp.status_code == 200:
+                                with open(out_path, "wb") as f_img:
+                                    f_img.write(img_resp.content)
+                                print(f"[Kie.ai] Successfully saved: {out_path} ({os.path.getsize(out_path)} bytes)")
+                                image_files.append(out_path)
+                                saved_ok = True
+                                break
+                        elif state == "fail" or d.get("failCode") or d.get("status") in (2, 3):
+                            print(f"[Kie.ai Warning] Task failed: {d.get('failMsg') or d.get('errorMessage')}")
                             break
                 except Exception as poll_err:
                     print(f"[Kie.ai Poll Notice] {poll_err}")

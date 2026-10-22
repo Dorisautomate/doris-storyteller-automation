@@ -50,7 +50,7 @@ def main():
     api.authenticate()
 
     last_state = "QUEUED"
-    for i in range(60): # Poll up to 10 minutes
+    for i in range(180): # Poll up to 30 minutes to tolerate Kaggle GPU queue times
         time.sleep(10)
         try:
             status_obj = api.kernels_status(KERNEL_SLUG)
@@ -59,7 +59,7 @@ def main():
 
             if "RUNNING" in s and last_state != "RUNNING":
                 last_state = "RUNNING"
-                update_hf_job_status(50, "Kaggle worker running F5-TTS inference and video assembly...")
+                print("[Info] Kaggle worker is now running.")
             elif "COMPLETE" in s:
                 print("[DONE] Kaggle execution finished successfully!")
                 update_hf_job_status(100, "Execution completed successfully! Video ready.", status="completed", asset_url=MASTER_VIDEO_URL)
@@ -73,8 +73,8 @@ def main():
             print(f"[Kaggle Poll Warn] {e}")
 
     # If timeout reached
-    print("[Timeout] Maximum polling duration reached.")
-    update_hf_job_status(0, "Execution monitoring timed out.", status="error")
+    print("[Timeout] Maximum polling duration reached (30 minutes).")
+    update_hf_job_status(0, "Execution monitoring timed out after 30 minutes.", status="error")
     sys.exit(1)
 
 if __name__ == "__main__":

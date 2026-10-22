@@ -19,6 +19,10 @@ on:
         description: 'Character Reference Image URL for Dynamic Generation'
         required: false
         default: 'https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/references/doris_character_reference_sheet.png'
+      kie_api_key:
+        description: 'Kie.ai API Key'
+        required: false
+        default: '12b5f2a14a89e0b265c05e789962efc6'
 
 jobs:
   execute-pipeline:
@@ -52,7 +56,7 @@ jobs:
           VOICE_MODEL: ${{ github.event.inputs.voice_model || 'hope_professional' }}
           IS_PREMIUM: ${{ github.event.inputs.is_premium || 'true' }}
           CHARACTER_REF_URL: ${{ github.event.inputs.character_ref_url || 'https://huggingface.co/datasets/Dorisautomate/automation-assets/raw/main/references/doris_character_reference_sheet.png' }}
-          KIE_API_KEY: '12b5f2a14a89e0b265c05e789962efc6'
+          KIE_API_KEY: ${{ github.event.inputs.kie_api_key || '12b5f2a14a89e0b265c05e789962efc6' }}
         run: |
           python -c "
           import json, os
